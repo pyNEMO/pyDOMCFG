@@ -1,1 +1,2 @@
 # pyDOMCFG
+TEST
