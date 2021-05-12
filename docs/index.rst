@@ -8,7 +8,12 @@ Welcome to pyDOMCFG's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: For users:
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: For developers:
 
 
 
