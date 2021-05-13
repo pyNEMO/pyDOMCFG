@@ -36,9 +36,15 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
+    "sphinx.ext.extlinks",
     "sphinx_rtd_theme",
     "numpydoc",
 ]
+
+# GitHub links
+extlinks = {
+    "pr": ("https://github.com/pyNEMO/pyDOMCFG/pull/%s", "PR#"),
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

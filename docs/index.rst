@@ -10,10 +10,12 @@ Welcome to pyDOMCFG's documentation!
    :maxdepth: 2
    :caption: For users:
 
+   users/api
+
 .. toctree::
    :maxdepth: 2
    :hidden:
    :caption: For developers:
 
    developers/contributing
-
+   developers/whats-new
