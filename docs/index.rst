@@ -15,11 +15,5 @@ Welcome to pyDOMCFG's documentation!
    :hidden:
    :caption: For developers:
 
+   developers/contributing
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
