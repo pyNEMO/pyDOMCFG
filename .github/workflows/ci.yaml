@@ -45,7 +45,7 @@ jobs:
           env_vars: OS,PYTHON
           name: codecov-umbrella
           fail_ci_if_error: false
-        
+
   upstream-dev:
     name: upstream-dev
     runs-on: ubuntu-latest
@@ -68,4 +68,3 @@ jobs:
       - name: Run Tests
         shell: bash -l {0}
         run: pytest --no-cov
-
