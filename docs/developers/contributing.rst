@@ -29,3 +29,37 @@ How to build the documentation:
 
     # Build the documentation
     make html
+
+
+Tests
+=====
+
+- All tests go into this folder ``pyDOMCFG/pydomcfg/tests``.
+
+- We are using `pytest <http://doc.pytest.org/en/latest/>`_ for testing.
+
+Test functions should look like this:
+
+.. code-block:: python
+
+    def add_one(x):
+        return x + 1
+
+
+    def test_add_one():
+        expected = 2
+        actual = add_one(1)
+        assert expected == actual
+
+How to run the tests:
+
+.. code-block:: sh
+
+    # Create and activate the test environment
+    conda env create -f pyDOMCFG/ci/environment.yml
+    conda activate pydomcfg_test
+
+    # Navigate to the root directory and run pytest
+    cd pyDOMCFG
+    pytest
+
