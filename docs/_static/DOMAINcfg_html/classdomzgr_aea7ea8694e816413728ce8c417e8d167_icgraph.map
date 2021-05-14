@@ -1,0 +1,8 @@
+<map id="domzgr::s_sf12" name="domzgr::s_sf12">
+<area shape="rect" id="node2" href="$classdomzgr.html#a51352adc1afdc0153fe650dcfb19f8f0" title="domzgr::zgr_sco" alt="" coords="166,5,285,32"/>
+<area shape="rect" id="node3" href="$classdomzgr.html#ada822202907efcc37cf378100b4269f9" title="domzgr::dom_zgr" alt="" coords="333,5,456,32"/>
+<area shape="rect" id="node4" href="$classdomain.html#a5d1540e5f6a0a09babf0be8e11c25de6" title="domain::dom_init" alt="" coords="505,5,626,32"/>
+<area shape="rect" id="node5" href="$classnemogcm.html#a018936b90bb6921ef79af4e9b285f817" title="nemogcm::nemo_init" alt="" coords="675,5,818,32"/>
+<area shape="rect" id="node6" href="$classnemogcm.html#a91edb087bb012ed7c1a2f8b51719f1b4" title="nemogcm::nemo_gcm" alt="" coords="867,5,1018,32"/>
+<area shape="rect" id="node7" href="$make__domain__cfg_8f90.html#a9f6d90bb83edd7c19021d70862cac608" title="make_domain_cfg" alt="" coords="1067,5,1195,32"/>
+</map>

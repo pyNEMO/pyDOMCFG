@@ -1,0 +1,33 @@
+<map id="mathelp::mathop_r31" name="mathelp::mathop_r31">
+<area shape="rect" id="node2" href="$classmathelp.html#afd3ec26328983b2205f197afebd5eff6" title="mathelp::ma_sin_r31" alt="" coords="211,5,354,32"/>
+<area shape="rect" id="node3" href="$classmathelp.html#abd683212e451c6aa90568a2315ee8a6c" title="mathelp::ma_cos_r31" alt="" coords="209,56,356,83"/>
+<area shape="rect" id="node4" href="$classmathelp.html#a5c86548165d06a044d54af6a33572881" title="mathelp::ma_tan_r31" alt="" coords="211,107,355,133"/>
+<area shape="rect" id="node5" href="$classmathelp.html#a7f8d4307d131b94e8df3502d6d02a976" title="mathelp::ma_asin_r31" alt="" coords="207,157,358,184"/>
+<area shape="rect" id="node6" href="$classmathelp.html#a1dcf4c58990cf8313c3b83f4f32e23b6" title="mathelp::ma_acos_r31" alt="" coords="205,208,360,235"/>
+<area shape="rect" id="node7" href="$classmathelp.html#a8d5ad1f6594b2dcf5079fc2f574f7f65" title="mathelp::ma_atan_r31" alt="" coords="207,259,358,285"/>
+<area shape="rect" id="node8" href="$classmathelp.html#a9fbc05809f7fd2fb84635bed8c35683e" title="mathelp::ma_exp_r31" alt="" coords="209,309,356,336"/>
+<area shape="rect" id="node9" href="$classmathelp.html#ae5082cc0b61e7364fbacf787137937cb" title="mathelp::ma_log_r31" alt="" coords="211,360,354,387"/>
+<area shape="rect" id="node10" href="$classmathelp.html#a79c11cdf3d654669768286a3847eacc9" title="mathelp::ma_sqrt_r31" alt="" coords="209,411,357,437"/>
+<area shape="rect" id="node11" href="$classmathelp.html#a11d3e576a157635e81fd5ab9a905d67f" title="mathelp::ma_chs_r31" alt="" coords="209,461,356,488"/>
+<area shape="rect" id="node12" href="$classmathelp.html#abcdcc79d52333848a284b1693fe8d91e" title="mathelp::ma_abs_r31" alt="" coords="209,512,356,539"/>
+<area shape="rect" id="node13" href="$classmathelp.html#a14caef87630bfc32c93a09834e53febb" title="mathelp::ma_cels_r31" alt="" coords="207,563,358,589"/>
+<area shape="rect" id="node14" href="$classmathelp.html#a11a68cf01d328fd302df1b219f3fc166" title="mathelp::ma_kelv_r31" alt="" coords="207,613,358,640"/>
+<area shape="rect" id="node15" href="$classmathelp.html#aa87429dff05bd3b6745abec57a3382fd" title="mathelp::ma_deg_r31" alt="" coords="209,664,356,691"/>
+<area shape="rect" id="node16" href="$classmathelp.html#a1b505010b5a8f4f8b30fc27bf0021986" title="mathelp::ma_rad_r31" alt="" coords="211,715,355,741"/>
+<area shape="rect" id="node17" href="$classmathelp.html#a3ab42259ee05d5b412d40fc290b89ab6" title="mathelp::ma_ident_r31" alt="" coords="205,765,360,792"/>
+<area shape="rect" id="node18" href="$classmathelp.html#a67a917251ca0a024f5e8b0c5097398f4" title="mathelp::ma_fugath_r31" alt="" coords="201,816,364,843"/>
+<area shape="rect" id="node19" href="$classmathelp.html#a53e16c68979bc4427074390d7c213f00" title="mathelp::ma_fuscat_r31" alt="" coords="201,867,364,893"/>
+<area shape="rect" id="node20" href="$classmathelp.html#a31d5495d369729584613d6e21a050914" title="mathelp::ma_fucoll_r31" alt="" coords="204,917,361,944"/>
+<area shape="rect" id="node21" href="$classmathelp.html#ae4aaca3d684cb5b31bd2c416187bb98d" title="mathelp::ma_fufill_r31" alt="" coords="207,968,358,995"/>
+<area shape="rect" id="node22" href="$classmathelp.html#a3990a3038a3a40906703fa809e699a6f" title="mathelp::ma_fuundef_r31" alt="" coords="198,1019,367,1045"/>
+<area shape="rect" id="node23" href="$classmathelp.html#a9b622df1728d9849ca195cf8e38a3335" title="mathelp::ma_fuonly_r31" alt="" coords="202,1069,363,1096"/>
+<area shape="rect" id="node24" href="$classmathelp.html#a8998dc8fef51ed6dde586c012d6a00ee" title="mathelp::ma_fumin_r31" alt="" coords="203,1120,362,1147"/>
+<area shape="rect" id="node25" href="$classmathelp.html#afc23c6a6919b9f5aed71b9d60ab43194" title="mathelp::ma_fumax_r31" alt="" coords="201,1171,364,1197"/>
+<area shape="rect" id="node26" href="$classmathelp.html#a71fa5c1bf70bb14cd4e5e3b89e9411cf" title="mathelp::ma_add_r31" alt="" coords="209,1221,356,1248"/>
+<area shape="rect" id="node27" href="$classmathelp.html#abb186fc33260c59ee8a44af6898bd8f7" title="mathelp::ma_subi_r31" alt="" coords="207,1272,358,1299"/>
+<area shape="rect" id="node28" href="$classmathelp.html#a487ecffa3ae8d1737d3d55f45f21ea4c" title="mathelp::ma_sub_r31" alt="" coords="209,1323,356,1349"/>
+<area shape="rect" id="node29" href="$classmathelp.html#acb9a8691ecc2f9aec9849c8ff1dd500d" title="mathelp::ma_mult_r31" alt="" coords="207,1373,358,1400"/>
+<area shape="rect" id="node30" href="$classmathelp.html#a15bff42ff91e3bb44ba927fc74ef4524" title="mathelp::ma_div_r31" alt="" coords="211,1424,354,1451"/>
+<area shape="rect" id="node31" href="$classmathelp.html#a11e51633982e94ca7cf76f58e9a83023" title="mathelp::ma_divi_r31" alt="" coords="209,1475,356,1501"/>
+<area shape="rect" id="node32" href="$classmathelp.html#af9250246904bc57f353b4b8cf031ce0a" title="mathelp::ma_power_r31" alt="" coords="202,1525,363,1552"/>
+</map>

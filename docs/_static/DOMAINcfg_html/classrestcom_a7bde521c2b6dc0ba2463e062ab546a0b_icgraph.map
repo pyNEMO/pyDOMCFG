@@ -1,0 +1,14 @@
+<map id="restcom::restdefv" name="restcom::restdefv">
+<area shape="rect" id="node2" href="$classrestcom.html#ab5fcf7e565f4303a34286f5046991990" title="restcom::restget_real" alt="" coords="179,132,325,159"/>
+<area shape="rect" id="node8" href="$classrestcom.html#af91333538ea60ea8e159576fd862090e" title="restcom::restput_real" alt="" coords="179,335,325,361"/>
+<area shape="rect" id="node3" href="$classrestcom.html#a7f4c79ba78962f2ce7664c1ddf41353c" title="restcom::restget_opp_r1d" alt="" coords="373,5,544,32"/>
+<area shape="rect" id="node4" href="$classrestcom.html#a805073b112c161796df1bd6cae7d9359" title="restcom::restget_opp_r2d" alt="" coords="373,56,544,83"/>
+<area shape="rect" id="node5" href="$classrestcom.html#a1359d14f276d516fc6b813d6c2900c69" title="restcom::restget_r1d" alt="" coords="387,107,530,133"/>
+<area shape="rect" id="node6" href="$classrestcom.html#a4f6b6915672831b01c24f0d3ad7df3a0" title="restcom::restget_r2d" alt="" coords="387,157,530,184"/>
+<area shape="rect" id="node7" href="$classrestcom.html#a5058fb792e922d16fcaa3af3dc2ef8c3" title="restcom::restget_r3d" alt="" coords="387,208,530,235"/>
+<area shape="rect" id="node9" href="$classrestcom.html#a07ece1e739fa9367ecdb7290257b1c0f" title="restcom::restput_opp_r1d" alt="" coords="373,259,544,285"/>
+<area shape="rect" id="node10" href="$classrestcom.html#ad0773457d7032e70979b3758b6589594" title="restcom::restput_opp_r2d" alt="" coords="373,309,544,336"/>
+<area shape="rect" id="node11" href="$classrestcom.html#a9d398564825b09c04e8ddf89cc76e0fa" title="restcom::restput_r1d" alt="" coords="387,360,530,387"/>
+<area shape="rect" id="node12" href="$classrestcom.html#aaac2e02724ff2222c6052ac0536ce9eb" title="restcom::restput_r2d" alt="" coords="387,411,530,437"/>
+<area shape="rect" id="node13" href="$classrestcom.html#a1427d4083ae5bb5f3e1068556f15b8e8" title="restcom::restput_r3d" alt="" coords="387,461,530,488"/>
+</map>

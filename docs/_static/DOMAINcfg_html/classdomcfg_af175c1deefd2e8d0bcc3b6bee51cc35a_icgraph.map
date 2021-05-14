@@ -1,0 +1,6 @@
+<map id="domcfg::dom_glo" name="domcfg::dom_glo">
+<area shape="rect" id="node2" href="$classdomcfg.html#a5e15a6d01e9de0dbd04f6ea1d571bfd5" title="domcfg::dom_cfg" alt="" coords="176,5,299,32"/>
+<area shape="rect" id="node3" href="$classnemogcm.html#a018936b90bb6921ef79af4e9b285f817" title="nemogcm::nemo_init" alt="" coords="347,5,490,32"/>
+<area shape="rect" id="node4" href="$classnemogcm.html#a91edb087bb012ed7c1a2f8b51719f1b4" title="nemogcm::nemo_gcm" alt="" coords="539,5,690,32"/>
+<area shape="rect" id="node5" href="$make__domain__cfg_8f90.html#a9f6d90bb83edd7c19021d70862cac608" title="make_domain_cfg" alt="" coords="739,5,867,32"/>
+</map>
