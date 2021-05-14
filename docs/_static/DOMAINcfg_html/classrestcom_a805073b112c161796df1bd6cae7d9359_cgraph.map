@@ -1,0 +1,6 @@
+<map id="restcom::restget_opp_r2d" name="restcom::restget_opp_r2d">
+<area shape="rect" id="node2" href="$classrestcom.html#a64a1999784be0bfa5f63b4f8523bb5cb" title="restcom::rest_alloc" alt="" coords="231,5,364,32"/>
+<area shape="rect" id="node3" href="$classrestcom.html#ab5fcf7e565f4303a34286f5046991990" title="restcom::restget_real" alt="" coords="225,56,370,83"/>
+<area shape="rect" id="node4" href="$classstringop.html#a7987a8e7105b24d54d2bd8083c253a23" title="stringop::find_str" alt="" coords="422,31,541,57"/>
+<area shape="rect" id="node5" href="$classrestcom.html#a7bde521c2b6dc0ba2463e062ab546a0b" title="restcom::restdefv" alt="" coords="419,81,543,108"/>
+</map>

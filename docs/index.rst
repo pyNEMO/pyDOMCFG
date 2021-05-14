@@ -8,6 +8,7 @@ Welcome to pyDOMCFG's documentation!
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    :caption: For users:
 
    users/api
@@ -19,3 +20,5 @@ Welcome to pyDOMCFG's documentation!
 
    developers/contributing
    developers/whats-new
+
+.. include:: readme.rst

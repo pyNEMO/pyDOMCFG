@@ -1,0 +1,19 @@
+<map id="domzgr::dom_zgr" name="domzgr::dom_zgr">
+<area shape="rect" id="node2" href="$classdomzgr.html#a28e1ee7037e35a9e3d51ee179efc02e6" title="domzgr::zgr_z" alt="" coords="201,5,306,32"/>
+<area shape="rect" id="node3" href="$classdomzgr.html#a7027db1e1f6d24636321ba427e30f128" title="domzgr::zgr_bat" alt="" coords="195,56,311,83"/>
+<area shape="rect" id="node5" href="$classdomzgr.html#a2292bc3024b0ee72fa80e67c71746fb9" title="domzgr::zgr_zco" alt="" coords="194,107,313,133"/>
+<area shape="rect" id="node6" href="$classdomzgr.html#a7dc8b2f07aade32d06a324372dc81260" title="domzgr::zgr_zps" alt="" coords="194,157,313,184"/>
+<area shape="rect" id="node8" href="$classdomzgr.html#a51352adc1afdc0153fe650dcfb19f8f0" title="domzgr::zgr_sco" alt="" coords="194,208,313,235"/>
+<area shape="rect" id="node15" href="$classdomzgr.html#ad3a3b64991d956cf896a55ffa0aa0957" title="domzgr::zgr_bat_zoom" alt="" coords="176,259,331,285"/>
+<area shape="rect" id="node16" href="$classdomzgr.html#a1683d14846019244a4b48fd678ae26a7" title="domzgr::zgr_bat_ctl" alt="" coords="185,309,322,336"/>
+<area shape="rect" id="node17" href="$classdomzgr.html#ac1f9af4e3f6ab8ea8519be3c8689c3c9" title="domzgr::zgr_bot_level" alt="" coords="178,360,329,387"/>
+<area shape="rect" id="node18" href="$classdomzgr.html#aba6048ac8a65ff43147c96c4fccfc766" title="domzgr::zgr_top_level" alt="" coords="178,411,329,437"/>
+<area shape="rect" id="node4" href="$classclosea.html#a5a6a2ed198f7a5d5886899ee4046dedb" title="closea::clo_bat" alt="" coords="381,56,491,83"/>
+<area shape="rect" id="node7" href="$classdomzgr.html#a06e45a5a17df7e9dea71b642909264b5" title="domzgr::zgr_isf" alt="" coords="380,132,492,159"/>
+<area shape="rect" id="node9" href="$classdomzgr.html#a1e4edf729b2dc475149a3cacc33471be" title="domzgr::s_sh94" alt="" coords="379,183,493,209"/>
+<area shape="rect" id="node11" href="$classdomzgr.html#aea7ea8694e816413728ce8c417e8d167" title="domzgr::s_sf12" alt="" coords="380,233,492,260"/>
+<area shape="rect" id="node13" href="$classdomzgr.html#ae3d6e2929b07aeb989d3a6cf74ddd241" title="domzgr::s_tanh" alt="" coords="380,284,492,311"/>
+<area shape="rect" id="node10" href="$classdomzgr.html#a079c4d1fa1d0ab70bc927b508aa3bec5" title="domzgr::fssig1" alt="" coords="547,183,655,209"/>
+<area shape="rect" id="node12" href="$classdomzgr.html#a56463360b8c41df796d317492f91fc17" title="domzgr::fgamma" alt="" coords="541,233,661,260"/>
+<area shape="rect" id="node14" href="$classdomzgr.html#aa82e8ba1794179142cfabc34bd717fb0" title="domzgr::fssig" alt="" coords="551,284,652,311"/>
+</map>
