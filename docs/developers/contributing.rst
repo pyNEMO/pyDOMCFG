@@ -59,8 +59,9 @@ How to run the tests:
     conda env create -f pyDOMCFG/ci/environment.yml
     conda activate pydomcfg_test
 
-    # Navigate to the root directory and run pytest
+    # Navigate to the root directory, install, and run pytest
     cd pyDOMCFG
+    pip install -e .
     pytest
 
 
@@ -99,4 +100,3 @@ the above tools every time you make a git commit:
 
     # You can skip the pre-commit checks with:
     git commit --no-verify
-

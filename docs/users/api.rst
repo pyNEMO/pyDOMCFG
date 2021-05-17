@@ -5,11 +5,9 @@ API reference
 
 This page provides an auto-generated summary of pyDOMCFG's API.
 
-TODO: just a placeholder
-========================
-
+Utils
+=====
 .. autosummary::
    :toctree: generated/
 
-   get_distribution
-
+   utils.generate_nemo_rectilinear_grid

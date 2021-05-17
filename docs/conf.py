@@ -11,6 +11,8 @@ import sys
 
 import sphinx_rtd_theme  # noqa: F401
 
+# isort: off
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -18,6 +20,7 @@ import sphinx_rtd_theme  # noqa: F401
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 sys.path.insert(0, os.path.abspath("../"))
+import pydomcfg  # noqa: E402 F401
 
 
 # -- Project information -----------------------------------------------------
