@@ -4,9 +4,13 @@ TODO: This is just a placeholder to showcase the use of pre-build datasets
 
 import pytest
 
-from .datasets import ds_flat, ds_island
+from .bathymetry import Bathymetry
 
-datasets = [ds_flat, ds_island]
+square = Bathymetry(range(10), range(10))
+shallow = square.flat(10)
+deep = square.flat(1.0e3)
+
+datasets = [shallow, deep]
 
 
 @pytest.mark.parametrize("ds", datasets)
