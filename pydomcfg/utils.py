@@ -38,8 +38,6 @@ def generate_cartesian_grid(
     ------
     ValueError
         If ppe{1,2}_m is a vector and jp{i,j}glo is specified, or viceversa.
-    ValueError
-        If ppe{1,2}_m is a multidimensional array.
     """
 
     ds = Dataset()
@@ -51,10 +49,9 @@ def generate_cartesian_grid(
         ppe = np.asarray(ppe, dtype=float)
         if (ppe.shape and jp) or (not ppe.shape and not jp):
             raise ValueError(
-                "jp{i,j}glo must be specified only if ppe{1,2}_m is a vector."
+                "jp{i,j}glo must be specified"
+                " if and only if ppe{1,2}_m is not a vector."
             )
-        elif len(ppe.shape) > 1:
-            raise ValueError("jp{i,j}glo must be a number or a vector.")
         ppe = ppe if ppe.shape else np.full(jp, ppe)
 
         # c: center f:face
