@@ -13,16 +13,19 @@ class Bathymetry:
     Class to generate idealized test bathymetry datasets.
     """
 
-    def __init__(self, x_f, y_f):
+    def __init__(self, *args, **kwargs):
         """
         Initialize class generating NEMO Cartesian grid.
 
         Parameters
         ----------
-        x_f, y_f: 1D array-like
-            1D arrays defining the cell faces (units: m).
+        *args
+            Arguments passed on to :py:func:`pydomcfg.utils.generate_cartesian_grid`
+        *kwargs
+            Keyword arguments passed on to
+            :py:func:`pydomcfg.utils.generate_cartesian_grid`.
         """
-        self._coords = generate_cartesian_grid(x_f, y_f)
+        self._coords = generate_cartesian_grid(*args, **kwargs)
 
     def flat(self, depth: float) -> Dataset:
         """

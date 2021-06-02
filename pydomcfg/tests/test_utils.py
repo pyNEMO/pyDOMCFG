@@ -11,18 +11,18 @@ from pydomcfg.utils import generate_cartesian_grid
 def test_generate_cartesian_grid():
 
     # x: irregular spacing
-    glamf = [-2, 2, 10, 20]
+    glamf = [2, 10, 20]
     glamt = [0, 6, 15]  # In-between f
     e1t = [4, 8, 10]  # f spacing
     e1f = [6, 9, 10]  # t spacing, e1t[-1] == e1f[-1]
 
     # y: regular spacing
-    gphif = np.arange(7)
-    gphit = 0.5 + np.arange(6)
+    gphif = np.arange(6) + 10.5
+    gphit = np.arange(6) + 10
     e2t = e2f = np.ones(6)
 
     # Generate
-    ds = generate_cartesian_grid(glamf, gphif)
+    ds = generate_cartesian_grid(ppe1_m=e1t, ppe2_m=1, jpjglo=6, ppgphi0=10)
 
     # Left f bounds has been removed
     assert ds.sizes == {"x": 3, "y": 6}
@@ -40,9 +40,9 @@ def test_generate_cartesian_grid():
     # Test coords
     exp_dict = {}
     exp_dict["glamt"], exp_dict["gphit"] = np.meshgrid(glamt, gphit)
-    exp_dict["glamf"], exp_dict["gphif"] = np.meshgrid(glamf[1:], gphif[1:])
-    exp_dict["glamu"], exp_dict["gphiu"] = np.meshgrid(glamf[1:], gphit)
-    exp_dict["glamv"], exp_dict["gphiv"] = np.meshgrid(glamt, gphif[1:])
+    exp_dict["glamf"], exp_dict["gphif"] = np.meshgrid(glamf, gphif)
+    exp_dict["glamu"], exp_dict["gphiu"] = np.meshgrid(glamf, gphit)
+    exp_dict["glamv"], exp_dict["gphiv"] = np.meshgrid(glamt, gphif)
     for varname, expected in exp_dict.items():
         actual = ds[varname].values
         np.testing.assert_equal(expected, actual)
