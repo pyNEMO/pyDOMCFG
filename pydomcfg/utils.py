@@ -37,8 +37,9 @@ def generate_cartesian_grid(
     Raises
     ------
     ValueError
-        If ppe{1,2}_m is of type 1D array-like and jp{i,j}glo is not None,
-        or ppe{1,2}_m is a multidimensional array.
+        If ppe{1,2}_m is a vector and jp{i,j}glo is specified, or viceversa.
+    ValueError
+        If ppe{1,2}_m is a multidimensional array.
     """
 
     ds = Dataset()
@@ -46,14 +47,18 @@ def generate_cartesian_grid(
         ["x", "y"], [ppe1_m, ppe2_m], [jpiglo, jpjglo], [ppglam0, ppgphi0]
     ):
 
+        # Check and convert ppe to array
         ppe = np.asarray(ppe, dtype=float)
         if (ppe.shape and jp) or (not ppe.shape and not jp):
-            raise ValueError("Do not specify jp{i,j}glo if ppe{1,2}_m is a vector")
+            raise ValueError(
+                "jp{i,j}glo must be specified only if ppe{1,2}_m is a vector."
+            )
         elif len(ppe.shape) > 1:
             raise ValueError("jp{i,j}glo must be a number or a vector.")
+        ppe = ppe if ppe.shape else np.full(jp, ppe)
 
         # c: center f:face
-        delta_c = DataArray(ppe if ppe.shape else np.full(jp, ppe), dims=dim)
+        delta_c = DataArray(ppe, dims=dim)
         coord_f = delta_c.pad(
             {dim: (1, 0)}, constant_values=ppg - 0.5 * delta_c[0]
         ).cumsum(dim)
@@ -81,9 +86,10 @@ def generate_cartesian_grid(
         ds[gprefix + "f"] = ds[gprefix + vel_f] = coord_f
         ds[eprefix + "t"] = ds[eprefix + vel_c] = delta_c
         ds[eprefix + "f"] = ds[eprefix + vel_f] = delta_f
-        ds[dim] = DataArray(
-            range(jp or len(ppe)), dims=dim, attrs=dict(axis=dim.upper())
-        )
+
+        # Upgrade dimension to coordinate so we cann add CF-attributes
+        ds[dim] = ds[dim]
+        ds[dim].attrs = dict(axis=dim.upper())
 
     # Generate 2D coordinates
     # Order dims (y, x) for convenience (e.g., for plotting)
