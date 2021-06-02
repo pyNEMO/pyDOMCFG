@@ -56,14 +56,9 @@ def generate_cartesian_grid(
 
         # c: center f:face
         delta_c = DataArray(ppe, dims=dim)
-        coord_f = delta_c.pad(
-            {dim: (1, 0)}, constant_values=ppg - 0.5 * delta_c[0]
-        ).cumsum(dim)
-        coord_c = coord_f.rolling({dim: 2}).mean().dropna(dim)
+        coord_f = delta_c.cumsum(dim) + (ppg - 0.5 * delta_c[0])
+        coord_c = coord_f.rolling({dim: 2}).mean().fillna(ppg)
         delta_f = coord_c.diff(dim).pad({dim: (0, 1)}, constant_values=delta_c[-1])
-
-        # Remove coord_f left bound
-        coord_f = coord_f.isel({dim: slice(1, None)})
 
         # Add attributes
         for da in [coord_c, coord_f]:
