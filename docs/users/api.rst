@@ -10,4 +10,4 @@ Utils
 .. autosummary::
    :toctree: generated/
 
-   utils.generate_nemo_rectilinear_grid
+   utils.generate_cartesian_grid
