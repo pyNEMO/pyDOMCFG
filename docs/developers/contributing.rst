@@ -31,7 +31,7 @@ How to fork pyDOMCFG, create a branch, and commit your code:
     can create a branch directly from main:
 
     .. code-block:: sh
-        
+
         git clone https://github.com/pyNEMO/pyDOMCFG.git
         cd pyDOMCFG
         git checkout -b name-of-the-branch
