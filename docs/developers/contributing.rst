@@ -1,6 +1,75 @@
 Contributing
 ************
 
+Version control
+===============
+
+We use `Git <https://git-scm.com/>`_ for version control.
+The code is hosted on `GitHub <https://github.com/>`_.
+
+How to fork pyDOMCFG, create a branch, and commit your code:
+
+1. Go to `pyDOMCFG <https://github.com/pyNEMO/pyDOMCFG.git>`_ and click the ``Fork`` button.
+
+2. Clone your fork and connect the repository to the upstream repository:
+
+.. code-block:: sh
+
+    git clone https://github.com/your-user-name/pyDOMCFG.git
+    cd pyDOMCFG
+    git remote add upstream https://github.com/pyNEMO/pyDOMCFG.git
+
+3. Create a branch:
+
+.. code-block:: sh
+
+    git checkout -b name-of-the-branch
+
+.. note::
+
+    Members of `@pyNEMO/pydomcfg <https://github.com/orgs/pyNEMO/teams/pydomcfg>`_
+    can create a branch directly from main:
+
+    .. code-block:: sh
+
+        git clone https://github.com/pyNEMO/pyDOMCFG.git
+        cd pyDOMCFG
+        git checkout -b name-of-the-branch
+
+    This is particularly useful for long-running branches (e.g., develop, stable, ...).
+
+4. To update this branch retrieving changes from the main branch:
+
+.. code-block:: sh
+
+    git fetch upstream
+    git merge upstream/main
+
+5. Once you have made changes, commit your code:
+
+.. code-block:: sh
+
+    # To check changes:
+    git status
+
+    # If you have created new files:
+    git add path/to/file-to-be-added
+
+    # Commit changes:
+    git commit -m "short message describing changes"
+
+6. Push your commits:
+
+.. code-block:: sh
+
+    git push origin name-of-the-branch
+
+7. Navigate to your repository on GitHub (`https://github.com/your-user-name/pyDOMCFG`),
+   click on the ``Pull Request`` button, edit title and description, and click
+   ``Send Pull Request``.
+
+
+
 Documentation
 =============
 
