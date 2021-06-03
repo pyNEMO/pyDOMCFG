@@ -14,7 +14,7 @@ How to fork pyDOMCFG, create a branch, and commit your code:
 2. Clone your fork and connect the repository to the upstream repository:
 
 .. code-block:: sh
-
+    
     git clone https://github.com/your-user-name/pyDOMCFG.git
     cd pyDOMCFG
     git remote add upstream https://github.com/pyNEMO/pyDOMCFG.git
