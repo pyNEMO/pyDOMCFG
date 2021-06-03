@@ -1,5 +1,5 @@
 # https://pre-commit.com/
-ci: 
+ci:
     autofix_prs: false
 exclude: docs/_static
 repos:
