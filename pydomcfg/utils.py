@@ -94,6 +94,6 @@ def generate_cartesian_grid(
     # Generate 2D coordinates (create dask arrays before broadcasting).
     # Order dims (y, x) for convenience (e.g., for plotting).
     (ds,) = xr.broadcast(ds if chunks is None else ds.chunk(chunks))
-    ds = ds.unify_chunks().transpose(*("y", "x"))
+    ds = ds.transpose(*("y", "x"))
 
     return ds.set_coords(ds.variables)
