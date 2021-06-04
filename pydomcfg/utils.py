@@ -28,7 +28,7 @@ def generate_cartesian_grid(
     jpiglo, jpjglo: int, optional
         Size of x/y dimension.
     ppglam0, ppgphi0: float
-        x/y coordinate of first T-point (unts: m).
+        x/y coordinate of first T-point (units: m).
     chunks: dict, optional
          Chunk sizes along each dimension (e.g., ``{"x": 5, "y": 5}``).
          Requires ``dask`` installed.
