@@ -11,6 +11,7 @@ Welcome to pyDOMCFG's documentation!
    :hidden:
    :caption: For users:
 
+   users/installing
    users/api
 
 .. toctree::
