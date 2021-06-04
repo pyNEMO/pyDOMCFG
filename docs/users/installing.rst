@@ -13,7 +13,7 @@ Instructions
 ------------
 
 pyDOMCFG must be installed from source because
-it has not been released on `PyPi <https://pypi.org/>`_ yet.
+it has not been released on `PyPI <https://pypi.org/>`_ yet.
 The best way to install all dependencies is to use `conda <http://conda.io/>`_.
 
 .. code-block:: sh
