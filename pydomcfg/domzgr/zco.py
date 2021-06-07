@@ -143,7 +143,7 @@ class Zco(Zgr):
         ds["z3W"][{"z": 0}] = 0.0
 
         # compute e3 scale factors
-        ds = self.compute_e3(ds).broadcast_like(self._bathy)
+        ds = self.compute_e3(ds).broadcast_like(self._bathy["Bathymetry"])
         ds = ds.set_coords(ds.variables)
 
         return self._bathy.merge(ds)

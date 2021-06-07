@@ -53,9 +53,8 @@ class Zgr:
         *) W-points are at integer values - 1/2 (between 0.5 and jpk-0.5)
         """
 
-        kindx = DataArray(
-            range(1, self._jpk + 1), coords={"z": range(self._jpk)}, dims="z"
-        ).astype(float)
+        kindx = DataArray(range(self._jpk), coords={"z": range(self._jpk)}, dims="z")
+        kindx = kindx + 1.0  # to deal with python convention
 
         if grd == "W":
             kindx -= 0.5
