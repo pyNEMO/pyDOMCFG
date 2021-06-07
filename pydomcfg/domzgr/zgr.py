@@ -81,7 +81,15 @@ class Zgr:
 
     # -------------------------------------------------------------------------
     @staticmethod
-    def compute_z3(su, ss1, a1, a2, a3, ss2=0.0, a4=0.0):
+    def compute_z3(
+        su: float,
+        ss1: float,
+        a1: float,
+        a2: float,
+        a3: float,
+        ss2: float = 0.0,
+        a4: float = 0.0,
+    ) -> float:
         """
         Generalised function providing the analytical
         transformation from computational space to
@@ -93,16 +101,28 @@ class Zgr:
 
         Parameters
         ----------
-        su  : uniform non-dimensional vertical coordinate s,
-              aka sigma-coordinates. 0 <= s <= 1
-        ss1 : stretched non-dimensional vertical coordinate s,
-              0 <= s <= 1
-        ss2 : second stretched non-dimensional vertical coordinate s,
-              0 <= s <= 1 (only used for zco with ldbletanh = True)
-        a1  : parameter of the transformation
-        a2  : parameter of the transformation
-        a3  : parameter of the transformation
-        a4  : parameter of the transformation (only used for zco with ldbletanh = True)
+        su: float
+            uniform non-dimensional vertical coordinate s,
+            aka sigma-coordinates. 0 <= s <= 1
+        ss1: float
+            stretched non-dimensional vertical coordinate s,
+            0 <= s <= 1
+        a1: float
+            parameter of the transformation
+        a2: float
+            parameter of the transformation
+        a3: float
+            parameter of the transformation
+        ss2: float
+             second stretched non-dimensional vertical coordinate s,
+             0 <= s <= 1 (only used for zco with ldbletanh = True)
+        a4: float
+            parameter of the transformation (only used for zco with ldbletanh = True)
+
+        Returns
+        -------
+        float
+
         """
 
         z = a1 + a2 * su + a3 * ss1 + a4 * ss2
