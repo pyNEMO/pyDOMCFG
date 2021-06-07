@@ -142,7 +142,8 @@ class Zco(Zgr):
         ds["z3W"] = ds["z3W"].where(ds["z"] > 0, 0)
 
         # compute e3 scale factors
-        ds = self.compute_e3(ds).broadcast_like(ds)
+        ds = self.compute_e3(ds).broadcast_like(self._bathy)
+        ds = ds.set_coords(ds.variables)
 
         return self._bathy.merge(ds)
 
