@@ -29,7 +29,18 @@ class Zgr:
         self._jpk = jpk
 
     # -------------------------------------------------------------------------
-    def init_ds(self) -> Dataset:
+    def init_ds(self):
+        """
+        Initialise the xarray dataset with ``z3{T,W}``
+        and ``e3{T,W}`` filled with NaN
+
+        Returns
+        -------
+        ds: Dataset
+            A copy of the dataset used to initialise the class with the new
+            coordinates ``z3{T,W}`` and ``e3{T,W}`` filled with NaN
+
+        """
         ds = self._bathy.copy()
         jpi = ds.dims["x"]
         jpj = ds.dims["y"]
