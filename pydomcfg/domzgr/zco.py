@@ -119,32 +119,32 @@ class Zco(Zgr):
 
             if self._ppkth * self._ppacr == 0.0:
                 # uniform zco grid
-                suT = -self.sigma(k, "T")
-                suW = -self.sigma(k, "W")
                 s1T = s1W = s2T = s2W = 0.0
                 a1 = a3 = a4 = 0.0
                 a2 = self._pphmax
             else:
                 # stretched zco grid
-                suT = -self.sigma(k, "T") * (self._jpk - 1) + 1
-                suW = -self.sigma(k, "W") * (self._jpk - 1) + 1
-                s1T = self._stretch_zco1(suT)
-                s1W = self._stretch_zco1(suW)
+                s1T = self._stretch_zco(-self.sigma(k, "T"))
+                s1W = self._stretch_zco(-self.sigma(k, "W"))
                 a1 = self._ppsur
                 a2 = self._ppa0
                 a3 = self._ppa1 * self._ppacr
                 if self._ldbletanh:
-                    s2T = self._stretch_zco2(suT)
-                    s2W = self._stretch_zco2(suW)
+                    s2T = self._stretch_zco(-self.sigma(k, "T"), self._ldbletanh)
+                    s2W = self._stretch_zco(-self.sigma(k, "W"), self._ldbletanh)
                     a4 = self._ppa2 * self._ppacr2
                 else:
                     s2T = s2W = a4 = 0.0
 
-            ds["z3T"][k, :, :] = self.compute_z3(suT, s1T, a1, a2, a3, s2T, a4)
-            ds["z3W"][k, :, :] = self.compute_z3(suW, s1W, a1, a2, a3, s2W, a4)
+            ds["z3T"][{"z": k}] = self.compute_z3(
+                -self.sigma(k, "T"), s1T, a1, a2, a3, s2T, a4
+            )
+            ds["z3W"][{"z": k}] = self.compute_z3(
+                -self.sigma(k, "W"), s1W, a1, a2, a3, s2W, a4
+            )
 
         # force first w-level to be exactly at zero
-        ds["z3W"][0, :, :] = 0.0
+        ds["z3W"][{"z": 0}] = 0.0
 
         # compute e3 scale factors
         dsz = self.compute_e3(ds)
@@ -187,14 +187,17 @@ class Zco(Zgr):
                 )
 
     # --------------------------------------------------------------------------
-    def _stretch_zco1(self, k: float):
+    def _stretch_zco(self, sigma: float, ldbletanh: bool = False):
         """
-        Provide the standard analytical stretching function for NEMO z-coordinates.
+        Provide the generalised analytical stretching function for NEMO z-coordinates.
 
         Parameters
         ----------
-        k: float
-            Vertical index
+        sigma: float
+            Uniform non-dimensional sigma-coordinate:
+            MUST BE positive, i.e. 0 <= sigma <= 1
+        ldbletanh: bool
+            True only if used to compute the double tanh stretching
 
         Returns
         -------
@@ -202,23 +205,14 @@ class Zco(Zgr):
             Stretched coordinate
         """
 
-        ss = np.log(np.cosh((k - self._ppkth) / self._ppacr))
-        return ss
+        kk = sigma * (self._jpk - 1) + 1
 
-    # --------------------------------------------------------------------------
-    def _stretch_zco2(self, k: float):
-        """
-        Provide the double tanh analytical stretching function for NEMO z-coordinates.
+        if not ldbletanh:
+            kth = self._ppkth
+            acr = float(self._ppacr)
+        else:
+            kth = self._ppkth2
+            acr = float(self._ppacr2)
 
-        Parameters
-        ----------
-        k: float
-            Vertical index
-        Returns
-        -------
-        ss: float
-            Stretched coordinate
-        """
-
-        ss = np.log(np.cosh((k - self._ppkth2) / self._ppacr2))
+        ss = np.log(np.cosh((kk - kth) / acr))
         return ss
