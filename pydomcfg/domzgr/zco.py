@@ -139,7 +139,7 @@ class Zco(Zgr):
         ds = Dataset()
         ds["z3T"] = self.compute_z3(suT, s1T, a1, a2, a3, s2T, a4)
         ds["z3W"] = self.compute_z3(suW, s1W, a1, a2, a3, s2W, a4)
-        ds["z3W"] = ds["z3W"].where(ds["z"] > 0, 0)
+        ds["z3W"][{"z": 0}] = 0.0
 
         # compute e3 scale factors
         ds = self.compute_e3(ds).broadcast_like(self._bathy)
