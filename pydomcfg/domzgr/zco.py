@@ -19,23 +19,23 @@ class Zco(Zgr):
     pp_to_be_computed = 999999.0
 
     """
-      Class to generate geopotential z-coordinates dataset objects.
+    Class to generate geopotential z-coordinates dataset objects.
 
-      Method
-      ------
-      *) Model levels' depths depT/W are defined from analytical function.
-      *) Model vertical scale factors e3 (i.e., grid cell thickness) can
-         be computed as
+    Method
+    ------
+    *) Model levels' depths depT/W are defined from analytical function.
+    *) Model vertical scale factors e3 (i.e., grid cell thickness) can
+       be computed as
 
              1) analytical derivative of depth function
                 (ln_e3_dep=False); for backward compatibility with v3.6.
              2) discrete derivative (central-difference) of levels' depth
                 (ln_e3_dep=True). The only possibility from v4.0.
 
-      References:
+    References:
        *) NEMO v4.0 domzgr/zgr_z subroutine
        *) Marti, Madec & Delecluse, 1992, JGR, 97, No8, 12,763-12,766.
-      """
+    """
 
     def __init__(self):
         """
@@ -192,18 +192,19 @@ class Zco(Zgr):
                 )
 
     # --------------------------------------------------------------------------
-    def stretch_zco1(self, k: float) -> float:
+    def stretch_zco1(self, k: float):
         """
         Provide the standard analytical stretching function for NEMO z-coordinates.
 
         Parameters
         ----------
-        k : float
+        k: float
+            Vertical index
 
         Returns
         -------
-        float
-
+        ss: float
+            Stretched coordinate
         """
 
         ss = np.log(np.cosh((k - self._ppkth) / self._ppacr))
@@ -217,11 +218,11 @@ class Zco(Zgr):
         Parameters
         ----------
         k: float
-
+            Vertical index
         Returns
         -------
         ss: float
-
+            Stretched coordinate
         """
 
         ss = np.log(np.cosh((k - self._ppkth2) / self._ppacr2))
