@@ -39,8 +39,6 @@ class Zgr:
         grd = ["T", "W"]
         crd = [("z", range(jpk)), ("y", range(jpj)), ("x", range(jpi))]
 
-        da = DataArray(np.full((jpk, jpj, jpi), np.nan), coords=crd)
-
         # Initialise a dataset with z3 and e3 dataarray filled with nan
         da = DataArray(np.zeros(shape=(jpk, jpj, jpi)) * np.nan, coords=crd)
         for v, g in product(var, grd):
