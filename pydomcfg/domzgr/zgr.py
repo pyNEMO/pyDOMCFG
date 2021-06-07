@@ -152,9 +152,8 @@ class Zgr:
         ds: Dataset
             xarray dataset with ``e3{T,W}`` correctly computed
         """
-        for k in range(self._jpk - 1):
-            ds["e3T"][{"z": k}] = ds["z3W"][{"z": k + 1}] - ds["z3W"][{"z": k}]
-            ds["e3W"][{"z": k + 1}] = ds["z3T"][{"z": k + 1}] - ds["z3T"][{"z": k}]
+        ds["e3T"][{"z": slice(None, -1)}] = ds["z3W"].diff("z", label="lower")
+        ds["e3W"][{"z": slice(1, None)}] = ds["z3T"].diff("z", label="upper")
         # Bottom:
         for varname, k in zip(["e3T", "e3W"], [-1, 0]):
             ds[varname][{"z": k}] = 2.0 * (ds["z3T"][{"z": k}] - ds["z3W"][{"z": k}])
