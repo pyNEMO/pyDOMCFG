@@ -4,8 +4,8 @@ Base class to generate NEMO v4.0 vertical grids.
 
 from itertools import product
 
-import numpy as np
-from xarray import DataArray, Dataset
+import xarray as xr
+from xarray import Dataset
 
 
 class Zgr:
@@ -31,27 +31,23 @@ class Zgr:
     # -------------------------------------------------------------------------
     def init_ds(self):
         """
-        Initialise the xarray dataset with ``z3{T,W}``
-        and ``e3{T,W}`` filled with NaN
+        Initialise the xarray dataset with empty
+        ``z3{T,W}`` and ``e3{T,W}``
 
         Returns
         -------
         ds: Dataset
-            A copy of the dataset used to initialise the class with the new
-            coordinates ``z3{T,W}`` and ``e3{T,W}`` filled with NaN
+            A copy of the dataset used to initialise the class with new
+            coordinates ``z3{T,W}`` and ``e3{T,W}`` empty dataarrays
 
         """
         ds = self._bathy.copy()
-        jpi = ds.sizes["x"]
-        jpj = ds.sizes["y"]
-        jpk = self._jpk
 
         var = ["z3", "e3"]
         grd = ["T", "W"]
-        crd = [("z", range(jpk)), ("y", range(jpj)), ("x", range(jpi))]
 
-        # Initialise a dataset with z3 and e3 dataarray filled with nan
-        da = DataArray(np.zeros(shape=(jpk, jpj, jpi)) * np.nan, coords=crd)
+        # Initialise a dataset with empty z3 and e3 dataarrays
+        da = xr.full_like(ds["Bathymetry"], None).expand_dims(z=range(self._jpk))
         for v, g in product(var, grd):
             ds[v + g] = da.copy()
             ds = ds.set_coords(v + g)
@@ -149,20 +145,20 @@ class Zgr:
         Parameters
         ----------
         ds: Dataset
-            xarray dataset with ``e3{T,W}`` filled with NaN
-            and ``z3{T,W}`` correctly computed
+            xarray dataset with empty ``e3{T,W}`` and ``z3{T,W}``
+            correctly computed
         Returns
         -------
         ds: Dataset
             xarray dataset with ``e3{T,W}`` correctly computed
         """
         for k in range(self._jpk - 1):
-            ds["e3T"][k, :, :] = ds["z3W"][k + 1, :, :] - ds["z3W"][k, :, :]
-            ds["e3W"][k + 1, :, :] = ds["z3T"][k + 1, :, :] - ds["z3T"][k, :, :]
+            ds["e3T"][{"z": k}] = ds["z3W"][{"z": k + 1}] - ds["z3W"][{"z": k}]
+            ds["e3W"][{"z": k + 1}] = ds["z3T"][{"z": k + 1}] - ds["z3T"][{"z": k}]
         # Bottom:
         k = -1
-        ds["e3T"][k, :, :] = 2.0 * (ds["z3T"][k, :, :] - ds["z3W"][k, :, :])
+        ds["e3T"][{"z": k}] = 2.0 * (ds["z3T"][{"z": k}] - ds["z3W"][{"z": k}])
         # Surface:
         k = 0
-        ds["e3W"][k, :, :] = 2.0 * (ds["z3T"][k, :, :] - ds["z3W"][k, :, :])
+        ds["e3W"][{"z": k}] = 2.0 * (ds["z3T"][{"z": k}] - ds["z3W"][{"z": k}])
         return ds
