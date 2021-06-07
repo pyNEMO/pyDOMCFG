@@ -108,48 +108,43 @@ class Zco(Zgr):
         self._ppkth2 = ppkth2
         self._ppacr2 = ppacr2
 
-        ds = self.init_ds()
-
         # computing coeff. if needed
         if self._ppkth * self._ppacr > 0.0:
             self._compute_pp()
 
         # compute z3 depths of vertical levels
-        for k in range(self._jpk):
-
-            if self._ppkth * self._ppacr == 0.0:
-                # uniform zco grid
-                suT = -self.sigma(k, "T")
-                suW = -self.sigma(k, "W")
-                s1T = s1W = s2T = s2W = 0.0
-                a1 = a3 = a4 = 0.0
-                a2 = self._pphmax
+        if self._ppkth * self._ppacr == 0.0:
+            # uniform zco grid
+            suT = -self.sigma("T")
+            suW = -self.sigma("W")
+            s1T = s1W = s2T = s2W = 0.0
+            a1 = a3 = a4 = 0.0
+            a2 = self._pphmax
+        else:
+            # stretched zco grid
+            suT = -self.sigma("T") * (self._jpk - 1) + 1
+            suW = -self.sigma("W") * (self._jpk - 1) + 1
+            s1T = self._stretch_zco1(suT)
+            s1W = self._stretch_zco1(suW)
+            a1 = self._ppsur
+            a2 = self._ppa0
+            a3 = self._ppa1 * self._ppacr
+            if self._ldbletanh:
+                s2T = self._stretch_zco2(suT)
+                s2W = self._stretch_zco2(suW)
+                a4 = self._ppa2 * self._ppacr2
             else:
-                # stretched zco grid
-                suT = -self.sigma(k, "T") * (self._jpk - 1) + 1
-                suW = -self.sigma(k, "W") * (self._jpk - 1) + 1
-                s1T = self._stretch_zco1(suT)
-                s1W = self._stretch_zco1(suW)
-                a1 = self._ppsur
-                a2 = self._ppa0
-                a3 = self._ppa1 * self._ppacr
-                if self._ldbletanh:
-                    s2T = self._stretch_zco2(suT)
-                    s2W = self._stretch_zco2(suW)
-                    a4 = self._ppa2 * self._ppacr2
-                else:
-                    s2T = s2W = a4 = 0.0
+                s2T = s2W = a4 = 0.0
 
-            ds["z3T"][k, :, :] = self.compute_z3(suT, s1T, a1, a2, a3, s2T, a4)
-            ds["z3W"][k, :, :] = self.compute_z3(suW, s1W, a1, a2, a3, s2W, a4)
-
-        # force first w-level to be exactly at zero
-        ds["z3W"][0, :, :] = 0.0
+        ds = Dataset()
+        ds["z3T"] = self.compute_z3(suT, s1T, a1, a2, a3, s2T, a4)
+        ds["z3W"] = self.compute_z3(suW, s1W, a1, a2, a3, s2W, a4)
+        ds["z3W"] = ds["z3W"].where(ds["z"] > 0, 0)
 
         # compute e3 scale factors
-        dsz = self.compute_e3(ds)
+        ds = self.compute_e3(ds).broadcast_like(ds)
 
-        return dsz
+        return self._bathy.merge(ds)
 
     # --------------------------------------------------------------------------
     def _compute_pp(self):
