@@ -47,7 +47,7 @@ class Zgr:
         return ds
 
     # -------------------------------------------------------------------------
-    def sigma(self, k: int, grd: str) -> float:
+    def sigma(self, k: int, grd: str):
         """
         Provide the analytical function for sigma-coordinate,
         a uniform non-dimensional vertical coordinate describing
@@ -61,15 +61,16 @@ class Zgr:
         Parameters
         ----------
         k: int
-          Model level index. Note that
-             *) T-points are at integer values (between 1 and jpk)
-             *) W-points are at integer values - 1/2 (between 0.5 and jpk-0.5)
+            Model level index. Note that
+            *) T-points are at integer values (between 1 and jpk)
+            *) W-points are at integer values - 1/2 (between 0.5 and jpk-0.5)
         grd: str
-          If we are dealing with "T" or "W" model levels.
+            If we are dealing with "T" or "W" model levels.
 
         Returns
         -------
-        float
+        ps: float
+            Uniform non-dimensional sigma-coordinate (0. <= sigma <= -1)
         """
 
         kindx = float(k + 1)  # to deal with python convention
@@ -89,7 +90,7 @@ class Zgr:
         a3: float,
         ss2: float = 0.0,
         a4: float = 0.0,
-    ) -> float:
+    ):
         """
         Generalised function providing the analytical
         transformation from computational space to
@@ -114,22 +115,22 @@ class Zgr:
         a3: float
             parameter of the transformation
         ss2: float
-             second stretched non-dimensional vertical coordinate s,
-             0 <= s <= 1 (only used for zco with ldbletanh = True)
+            second stretched non-dimensional vertical coordinate s,
+            0 <= s <= 1 (only used for zco with ldbletanh = True)
         a4: float
             parameter of the transformation (only used for zco with ldbletanh = True)
 
         Returns
         -------
-        float
-
+        z: float
+            Depths of model levels
         """
 
         z = a1 + a2 * su + a3 * ss1 + a4 * ss2
         return z
 
     # -------------------------------------------------------------------------
-    def compute_e3(self, ds: Dataset) -> Dataset:
+    def compute_e3(self, ds: Dataset):
         """
         Grid cell thickness computed as discrete derivative
         (central-difference) of levels' depth
@@ -137,10 +138,12 @@ class Zgr:
         Parameters
         ----------
         ds: Dataset
-
+            xarray dataset with ``e3{T,W}`` filled with NaN
+            and ``z3{T,W}`` correctly computed
         Returns
         -------
-        Dataset
+        ds: Dataset
+            xarray dataset with ``e3{T,W}`` correctly computed
         """
         for k in range(self._jpk - 1):
             ds["e3T"][k, :, :] = ds["z3W"][k + 1, :, :] - ds["z3W"][k, :, :]
