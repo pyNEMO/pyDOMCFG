@@ -38,7 +38,7 @@ class Zco(Zgr):
     """
 
     # --------------------------------------------------------------------------
-    def generate(
+    def __call__(
         self,
         ppdzmin,
         pphmax,
@@ -112,7 +112,7 @@ class Zco(Zgr):
 
         # computing coeff. if needed
         if self._ppkth * self._ppacr > 0.0:
-            self.compute_pp()
+            self._compute_pp()
 
         # compute z3 depths of vertical levels
         for k in range(self._jpk):
@@ -128,14 +128,14 @@ class Zco(Zgr):
                 # stretched zco grid
                 suT = -self.sigma(k, "T") * (self._jpk - 1) + 1
                 suW = -self.sigma(k, "W") * (self._jpk - 1) + 1
-                s1T = self.stretch_zco1(suT)
-                s1W = self.stretch_zco1(suW)
+                s1T = self._stretch_zco1(suT)
+                s1W = self._stretch_zco1(suW)
                 a1 = self._ppsur
                 a2 = self._ppa0
                 a3 = self._ppa1 * self._ppacr
                 if self._ldbletanh:
-                    s2T = self.stretch_zco2(suT)
-                    s2W = self.stretch_zco2(suW)
+                    s2T = self._stretch_zco2(suT)
+                    s2W = self._stretch_zco2(suW)
                     a4 = self._ppa2 * self._ppacr2
                 else:
                     s2T = s2W = a4 = 0.0
@@ -152,7 +152,7 @@ class Zco(Zgr):
         return dsz
 
     # --------------------------------------------------------------------------
-    def compute_pp(self):
+    def _compute_pp(self):
         """
         Compute the coefficients for zco grid if requested.
 
@@ -187,7 +187,7 @@ class Zco(Zgr):
                 )
 
     # --------------------------------------------------------------------------
-    def stretch_zco1(self, k: float):
+    def _stretch_zco1(self, k: float):
         """
         Provide the standard analytical stretching function for NEMO z-coordinates.
 
@@ -206,7 +206,7 @@ class Zco(Zgr):
         return ss
 
     # --------------------------------------------------------------------------
-    def stretch_zco2(self, k: float):
+    def _stretch_zco2(self, k: float):
         """
         Provide the double tanh analytical stretching function for NEMO z-coordinates.
 
