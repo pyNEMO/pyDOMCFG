@@ -37,11 +37,6 @@ class Zco(Zgr):
        *) Marti, Madec & Delecluse, 1992, JGR, 97, No8, 12,763-12,766.
     """
 
-    def __init__(self):
-        """
-        Initialise class.
-        """
-
     # --------------------------------------------------------------------------
     def generate(
         self,
