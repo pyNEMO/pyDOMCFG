@@ -133,7 +133,6 @@ class Zgr:
 
         # Bottom:
         for varname, k in zip(["e3T", "e3W"], [-1, 0]):
-            ds[varname] = ds[varname].fillna(
-                2.0 * (ds["z3T"][{"z": k}] - ds["z3W"][{"z": k}])
-            )
+            ds[varname][{"z": k}] = 2.0 * (ds["z3T"][{"z": k}] - ds["z3W"][{"z": k}])
+
         return ds
