@@ -156,9 +156,6 @@ class Zgr:
             ds["e3T"][{"z": k}] = ds["z3W"][{"z": k + 1}] - ds["z3W"][{"z": k}]
             ds["e3W"][{"z": k + 1}] = ds["z3T"][{"z": k + 1}] - ds["z3T"][{"z": k}]
         # Bottom:
-        k = -1
-        ds["e3T"][{"z": k}] = 2.0 * (ds["z3T"][{"z": k}] - ds["z3W"][{"z": k}])
-        # Surface:
-        k = 0
-        ds["e3W"][{"z": k}] = 2.0 * (ds["z3T"][{"z": k}] - ds["z3W"][{"z": k}])
+        for varname, k in zip(["e3T", "e3W"], [-1, 0]):
+            ds[varname][{"z": k}] = 2.0 * (ds["z3T"][{"z": k}] - ds["z3W"][{"z": k}])
         return ds
