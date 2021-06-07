@@ -42,8 +42,8 @@ class Zgr:
 
         """
         ds = self._bathy.copy()
-        jpi = ds.dims["x"]
-        jpj = ds.dims["y"]
+        jpi = ds.sizes["x"]
+        jpj = ds.sizes["y"]
         jpk = self._jpk
 
         var = ["z3", "e3"]
