@@ -95,6 +95,11 @@ class Zco(Zgr):
         Dataset
            Describing the 3D geometry of the model
 
+        Raises
+        -------
+        ValueError
+            If ldbletanh = True and parametrs are equal to 0.
+
         """
         self._ppdzmin = ppdzmin
         self._pphmax = pphmax
@@ -111,8 +116,7 @@ class Zco(Zgr):
         ds = self.init_ds()
 
         # computing coeff. if needed
-        if self._ppkth * self._ppacr > 0.0:
-            self._compute_pp()
+        self._ppsur, self._ppa0, self._ppa1 = self._compute_pp()
 
         # compute z3 depths of vertical levels
         for k in range(self._jpk):
@@ -133,7 +137,12 @@ class Zco(Zgr):
                 a1 = self._ppsur
                 a2 = self._ppa0 * (self._jpk - 1)
                 a3 = self._ppa1 * self._ppacr
+                # double tahh
                 if self._ldbletanh:
+                    if self._ppa2 * self._ppkth2 * self._ppacr2 == 0.0:
+                        raise ValueError(
+                            "ppa2, ppkth2 and ppacr2 must > 0. " "when ldbletanh = True"
+                        )
                     s2T = self._stretch_zco(-self.sigma(k, "T"), self._ldbletanh)
                     s2W = self._stretch_zco(-self.sigma(k, "W"), self._ldbletanh)
                     a4 = self._ppa2 * self._ppacr2
@@ -152,39 +161,31 @@ class Zco(Zgr):
         return dsz
 
     # --------------------------------------------------------------------------
-    def _compute_pp(self):
+    def _compute_pp(self) -> tuple:
         """
-        Compute the coefficients for zco grid if requested.
+        Compute the coefficients for zco grid if needed.
 
-        Raises
-        ------
-        ValueError
-            If ldbletanh = True and parametrs are equal to 0.
+        Returns
+        -------
+        tuple
+            (ppsur, ppa0, ppa1)
 
         """
-        if (
-            self._ppsur == self.pp_to_be_computed
-            or self._ppa0 == self.pp_to_be_computed
-            or self._ppa1 == self.pp_to_be_computed
-        ):
+        pp_in = (self._ppsur, self._ppa0, self._ppa1)
+        if not pp_in.count(self.pp_to_be_computed):
+            return pp_in
 
-            aa = self._ppdzmin - self._pphmax / float(self._jpk - 1)
-            bb = np.tanh((1 - self._ppkth) / self._ppacr)
-            cc = self._ppacr / float(self._jpk - 1)
-            dd = np.log(np.cosh((self._jpk - self._ppkth) / self._ppacr)) - np.log(
-                np.cosh((1 - self._ppkth) / self._ppacr)
-            )
+        aa = self._ppdzmin - self._pphmax / float(self._jpk - 1)
+        bb = np.tanh((1 - self._ppkth) / self._ppacr)
+        cc = self._ppacr / float(self._jpk - 1)
+        dd = np.log(np.cosh((self._jpk - self._ppkth) / self._ppacr))
+        ee = np.log(np.cosh((1.0 - self._ppkth) / self._ppacr))
 
-            self._ppa1 = aa / (bb - cc * dd)
-            self._ppa0 = self._ppdzmin - self._ppa1 * bb
-            self._ppsur = -self._ppa0 - self._ppa1 * self._ppacr * np.log(
-                np.cosh((1 - self._ppkth) / self._ppacr)
-            )
+        ppa1 = aa / (bb - cc * (dd - ee))
+        ppa0 = self._ppdzmin - self._ppa1 * bb
+        ppsur = -(self._ppa0 + self._ppa1 * self._ppacr * ee)
 
-            if self._ldbletanh and self._ppa2 * self._ppkth2 * self._ppacr2 == 0.0:
-                raise ValueError(
-                    "ppa2, ppkth2 and ppacr2 must > 0. " "when ldbletanh = True"
-                )
+        return (ppsur, ppa0, ppa1)
 
     # --------------------------------------------------------------------------
     def _stretch_zco(self, sigma: float, ldbletanh: bool = False):
