@@ -6,7 +6,7 @@ Class to generate NEMO v4.0 standard geopotential z-coordinates
 
 
 import numpy as np
-from xarray import Dataset
+from xarray import DataArray, Dataset
 
 from .zgr import Zgr
 
@@ -51,6 +51,7 @@ class Zco(Zgr):
         ppa2: float = 0.0,
         ppkth2: float = 0.0,
         ppacr2: float = 0.0,
+        ln_e3_dep: bool = True,
     ) -> Dataset:
         """
         Generate NEMO geopotential z-coordinates model levels.
@@ -82,13 +83,17 @@ class Zco(Zgr):
             (default = pp_to_be_computed, i.e. computed from
             ppdzmin, pphmax, ppkth and ppacr)
         ldbletanh: bool
-            Logical flag to use or not double tanh stretching function (default = False)
+            Logical flag to use or not double tanh stretching function
+            (default = False)
         ppa2: float
             Double tanh stretching function parameter
         ppkth2: float
             Double tanh stretching function parameter
         ppacr2: float
             Double tanh stretching function parameter
+        ln_e3_dep: bool
+            Logical flag to comp. e3 as fin. diff. (True) or
+            analyt. (False) (default = True)
 
         Returns
         -------
@@ -112,28 +117,36 @@ class Zco(Zgr):
         self._ppa2 = ppa2
         self._ppkth2 = ppkth2
         self._ppacr2 = ppacr2
+        self._ln_e3_dep = ln_e3_dep
 
-        ds = self.init_ds()
+        ds = self._init_ds()
 
         # computing coeff. if needed
         self._ppsur, self._ppa0, self._ppa1 = self._compute_pp()
+
+        # compute sigma-coordinates for z3 computation
+        kindx = DataArray(range(self._jpk), coords={"z": range(self._jpk)}, dims="z")
+        self._sigT = -self._sigma(kindx, "T")
+        self._sigW = -self._sigma(kindx, "W")
+        self._sigTp1 = -self._sigma(kindx + 1.0, "T")
+        self._sigWp1 = -self._sigma(kindx + 1.0, "W")
 
         # compute z3 depths of vertical levels
         for k in range(self._jpk):
 
             if self._ppkth * self._ppacr == 0.0:
                 # uniform zco grid
-                suT = -self.sigma(k, "T")
-                suW = -self.sigma(k, "W")
+                suT = self._sigT[{"z": k}]
+                suW = self._sigW[{"z": k}]
                 s1T = s1W = s2T = s2W = 0.0
                 a1 = a3 = a4 = 0.0
                 a2 = self._pphmax
             else:
                 # stretched zco grid
-                suT = -self.sigma(k + 1, "T")
-                suW = -self.sigma(k + 1, "W")
-                s1T = self._stretch_zco(-self.sigma(k, "T"))
-                s1W = self._stretch_zco(-self.sigma(k, "W"))
+                suT = self._sigTp1[{"z": k}]
+                suW = self._sigWp1[{"z": k}]
+                s1T = self._stretch_zco(self._sigT[{"z": k}])
+                s1W = self._stretch_zco(self._sigW[{"z": k}])
                 a1 = self._ppsur
                 a2 = self._ppa0 * (self._jpk - 1)
                 a3 = self._ppa1 * self._ppacr
@@ -143,20 +156,24 @@ class Zco(Zgr):
                         raise ValueError(
                             "ppa2, ppkth2 and ppacr2 must > 0. " "when ldbletanh = True"
                         )
-                    s2T = self._stretch_zco(-self.sigma(k, "T"), self._ldbletanh)
-                    s2W = self._stretch_zco(-self.sigma(k, "W"), self._ldbletanh)
+                    s2T = self._stretch_zco(self._sigT[{"z": k}], self._ldbletanh)
+                    s2W = self._stretch_zco(self._sigW[{"z": k}], self._ldbletanh)
                     a4 = self._ppa2 * self._ppacr2
                 else:
                     s2T = s2W = a4 = 0.0
 
-            ds["z3T"][{"z": k}] = self.compute_z3(suT, s1T, a1, a2, a3, s2T, a4)
-            ds["z3W"][{"z": k}] = self.compute_z3(suW, s1W, a1, a2, a3, s2W, a4)
+            ds["z3T"][{"z": k}] = self._compute_z3(suT, s1T, a1, a2, a3, s2T, a4)
+            ds["z3W"][{"z": k}] = self._compute_z3(suW, s1W, a1, a2, a3, s2W, a4)
 
         # force first w-level to be exactly at zero
         ds["z3W"][{"z": 0}] = 0.0
 
         # compute e3 scale factors
-        dsz = self.compute_e3(ds)
+
+        if self._ln_e3_dep:
+            dsz = self._compute_e3(ds)
+        else:
+            dsz = self._analyt_e3(ds)
 
         return dsz
 
@@ -217,3 +234,47 @@ class Zco(Zgr):
 
         ss = np.log(np.cosh((kk - kth) / acr))
         return ss
+
+    # --------------------------------------------------------------------------
+    def _analyt_e3(self, ds: Dataset):
+        """
+        Provide e3T/W as analytical derivative of depth function
+        for backward compatibility with v3.6.
+
+        Parameters
+        ----------
+        ds: Dataset
+            xarray dataset with empty ``e3{T,W}`` and ``z3{T,W}``
+            correctly computed
+        Returns
+        -------
+        ds: Dataset
+            xarray dataset with ``e3{T,W}`` correctly computed
+        """
+
+        if self._ppkth * self._ppacr == 0.0:
+            # uniform zco grid
+            ds["e3T"][{"z": slice(self._jpk)}] = self._pphmax * (self._jpk - 1.0)
+            ds["e3W"][{"z": slice(self._jpk)}] = self._pphmax * (self._jpk - 1.0)
+        else:
+            # stretched zco grid
+            ac0 = self._ppa0
+            bc1 = self._ppa1
+            # now faster to use loop, to be optimised
+            # using xarray features in the future
+            for k in range(self._jpk):
+                kT = self._sigT[{"z": k}] * (self._jpk - 1.0) + 1.0
+                kW = self._sigW[{"z": k}] * (self._jpk - 1.0) + 1.0
+                bT1 = np.tanh((kT - self._ppkth) / self._ppacr)
+                bW1 = np.tanh((kW - self._ppkth) / self._ppacr)
+                if self._ldbletanh:
+                    cc2 = self._ppa2
+                    cT2 = np.tanh((kT - self._ppkth2) / self._ppacr2)
+                    cW2 = np.tanh((kW - self._ppkth2) / self._ppacr2)
+                else:
+                    cc2 = cT2 = cW2 = 0.0
+
+                ds["e3T"][{"z": k}] = ac0 + bc1 * bT1 + cc2 * cT2
+                ds["e3W"][{"z": k}] = ac0 + bc1 * bW1 + cc2 * cW2
+
+        return ds

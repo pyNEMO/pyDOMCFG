@@ -5,7 +5,7 @@ Base class to generate NEMO v4.0 vertical grids.
 from itertools import product
 
 import xarray as xr
-from xarray import Dataset
+from xarray import DataArray, Dataset
 
 
 class Zgr:
@@ -29,7 +29,7 @@ class Zgr:
         self._jpk = jpk
 
     # -------------------------------------------------------------------------
-    def init_ds(self):
+    def _init_ds(self):
         """
         Initialise the xarray dataset with empty
         ``z3{T,W}`` and ``e3{T,W}``
@@ -54,21 +54,21 @@ class Zgr:
         return ds
 
     # -------------------------------------------------------------------------
-    def sigma(self, k: int, grd: str):
+    def _sigma(self, kindx: DataArray, grd: str):
         """
         Provide the analytical function for sigma-coordinate,
         a uniform non-dimensional vertical coordinate describing
         the non-dimensional position of model levels.
 
-        Consider that 0. <= sigma <= -1, with
+        Consider that -1 <= sigma <= 0, with
 
                  sigma =  0 at the shallower boundary
                  sigma = -1 at the deeper boundary
 
         Parameters
         ----------
-        k: int
-            Model level index. Note that
+        kindx: DataArray
+            Model levels indexes. Note that
             *) T-points are at integer values (between 1 and jpk)
             *) W-points are at integer values - 1/2 (between 0.5 and jpk-0.5)
         grd: str
@@ -76,26 +76,27 @@ class Zgr:
 
         Returns
         -------
-        ps: float
-            Uniform non-dimensional sigma-coordinate (0. <= sigma <= -1)
+        ps: DataArray
+            Uniform non-dimensional sigma-coordinate (-1 <= sigma <= 0)
         """
 
-        kindx = float(k + 1)  # to deal with python convention
+        kindx = kindx + 1.0  # Fortran indexing
+
         if grd == "W":
             kindx -= 0.5
 
-        ps = -(kindx - 0.5) / float(self._jpk - 1)
+        ps = -(kindx - 0.5) / float(self._jpk - 1.0)
         return ps
 
     # -------------------------------------------------------------------------
     @staticmethod
-    def compute_z3(
-        su: float,
-        ss1: float,
+    def _compute_z3(
+        su: DataArray,
+        ss1: DataArray,
         a1: float,
         a2: float,
         a3: float,
-        ss2: float = 0.0,
+        ss2: DataArray = 0.0,
         a4: float = 0.0,
     ):
         """
@@ -109,10 +110,10 @@ class Zgr:
 
         Parameters
         ----------
-        su: float
+        su: DataArray
             uniform non-dimensional vertical coordinate s,
             aka sigma-coordinates. 0 <= s <= 1
-        ss1: float
+        ss1: DataArray
             stretched non-dimensional vertical coordinate s,
             0 <= s <= 1
         a1: float
@@ -121,7 +122,7 @@ class Zgr:
             parameter of the transformation
         a3: float
             parameter of the transformation
-        ss2: float
+        ss2: DataArray
             second stretched non-dimensional vertical coordinate s,
             0 <= s <= 1 (only used for zco with ldbletanh = True)
         a4: float
@@ -129,7 +130,7 @@ class Zgr:
 
         Returns
         -------
-        z: float
+        z: DataArray
             Depths of model levels
         """
 
@@ -137,7 +138,7 @@ class Zgr:
         return z
 
     # -------------------------------------------------------------------------
-    def compute_e3(self, ds: Dataset):
+    def _compute_e3(self, ds: Dataset):
         """
         Grid cell thickness computed as discrete derivative
         (central-difference) of levels' depth
@@ -154,7 +155,7 @@ class Zgr:
         """
         ds["e3T"][{"z": slice(None, -1)}] = ds["z3W"].diff("z", label="lower")
         ds["e3W"][{"z": slice(1, None)}] = ds["z3T"].diff("z", label="upper")
-        # Bottom:
+        # Bottom and surface:
         for varname, k in zip(["e3T", "e3W"], [-1, 0]):
             ds[varname][{"z": k}] = 2.0 * (ds["z3T"][{"z": k}] - ds["z3W"][{"z": k}])
         return ds
