@@ -6,7 +6,7 @@ Class to generate NEMO v4.0 standard geopotential z-coordinates
 
 
 import numpy as np
-from xarray import DataArray, Dataset
+from xarray import Dataset
 
 from .zgr import Zgr
 
@@ -133,7 +133,7 @@ class Zco(Zgr):
         self._ppsur, self._ppa0, self._ppa1 = self._compute_pp()
 
         # compute sigma-coordinates for z3 computation
-        kindx = DataArray(range(self._jpk), coords={"z": range(self._jpk)}, dims="z")
+        kindx = ds["z"]
         self._sigT, self._sigW = self._sigma(kindx)
         self._sigTp1, self._sigWp1 = self._sigma(kindx + 1.0)
 
