@@ -120,6 +120,13 @@ class Zco(Zgr):
         self._is_uniform = not ppkth or not ppacr
         self._ln_e3_dep = ln_e3_dep
 
+        # Checking consistency of input parameters
+        if self._ldbletanh:
+            if self._ppa2 * self._ppkth2 * self._ppacr2 == 0.0:
+                raise ValueError(
+                    "ppa2, ppkth2 and ppacr2 MUST be > 0. " "when ldbletanh = True"
+                )
+
         ds = self._init_ds()
 
         # computing coeff. if needed
@@ -151,10 +158,6 @@ class Zco(Zgr):
                 a3 = self._ppa1 * self._ppacr
                 # double tahh
                 if self._ldbletanh:
-                    if self._ppa2 * self._ppkth2 * self._ppacr2 == 0.0:
-                        raise ValueError(
-                            "ppa2, ppkth2 and ppacr2 must > 0. " "when ldbletanh = True"
-                        )
                     s2T = self._stretch_zco(-self._sigT[{"z": k}], self._ldbletanh)
                     s2W = self._stretch_zco(-self._sigW[{"z": k}], self._ldbletanh)
                     a4 = self._ppa2 * self._ppacr2
