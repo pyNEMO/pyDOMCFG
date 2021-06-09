@@ -253,7 +253,7 @@ class Zco(Zgr):
             xarray dataset with ``e3{T,W}`` correctly computed
         """
 
-        if self._ppkth * self._ppacr == 0.0:
+        if self._is_uniform:
             # uniform zco grid
             ds["e3T"][{"z": slice(self._jpk)}] = self._pphmax * (self._jpk - 1.0)
             ds["e3W"][{"z": slice(self._jpk)}] = self._pphmax * (self._jpk - 1.0)
