@@ -135,7 +135,7 @@ class Zco(Zgr):
         # compute z3 depths of vertical levels
         for k in range(self._jpk):
 
-            if self._ppkth * self._ppacr == 0.0:
+            if self._is_uniform:
                 # uniform zco grid
                 suT = self._sigT[{"z": k}]
                 suW = self._sigW[{"z": k}]
