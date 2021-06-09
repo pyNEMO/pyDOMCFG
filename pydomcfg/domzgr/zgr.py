@@ -54,7 +54,7 @@ class Zgr:
         return ds
 
     # -------------------------------------------------------------------------
-    def _sigma(self, kindx: DataArray):
+    def _compute_sigma(self, kindx: DataArray):
         """
         Provide the analytical function for sigma-coordinate,
         a uniform non-dimensional vertical coordinate describing

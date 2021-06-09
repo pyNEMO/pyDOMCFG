@@ -134,46 +134,17 @@ class Zco(Zgr):
 
         # compute sigma-coordinates for z3 computation
         kindx = ds["z"]
-        self._sigT, self._sigW = self._sigma(kindx)
-        self._sigTp1, self._sigWp1 = self._sigma(kindx + 1.0)
+        sigma, sigma_p1 = (self._compute_sigma(kk) for kk in (kindx, kindx + 1.0))
+        self._sigT, self._sigW = sigma
+        self._sigTp1, self._sigWp1 = sigma_p1
 
-        # compute z3 depths of vertical levels
-        for k in range(self._jpk):
-
-            if self._is_uniform:
-                # uniform zco grid
-                suT = -self._sigT[{"z": k}]
-                suW = -self._sigW[{"z": k}]
-                s1T = s1W = s2T = s2W = 0.0
-                a1 = a3 = a4 = 0.0
-                a2 = self._pphmax
-            else:
-                # stretched zco grid
-                suT = -self._sigTp1[{"z": k}]
-                suW = -self._sigWp1[{"z": k}]
-                s1T = self._stretch_zco(-self._sigT[{"z": k}])
-                s1W = self._stretch_zco(-self._sigW[{"z": k}])
-                a1 = self._ppsur
-                a2 = self._ppa0 * (self._jpk - 1)
-                a3 = self._ppa1 * self._ppacr
-                # double tahh
-                if self._ldbletanh:
-                    s2T = self._stretch_zco(-self._sigT[{"z": k}], self._ldbletanh)
-                    s2W = self._stretch_zco(-self._sigW[{"z": k}], self._ldbletanh)
-                    a4 = self._ppa2 * self._ppacr2
-                else:
-                    s2T = s2W = a4 = 0.0
-
-            ds["z3T"][{"z": k}] = self._compute_z3(suT, s1T, a1, a2, a3, s2T, a4)
-            ds["z3W"][{"z": k}] = self._compute_z3(suW, s1W, a1, a2, a3, s2W, a4)
-
-        # force first w-level to be exactly at zero
-        ds["z3W"][{"z": 0}] = 0.0
+        # compute z3 depths of zco vertical levels
+        dsz = self._zco_z3(ds)
 
         # compute e3 scale factors
-        dsz = self._compute_e3(ds) if self._ln_e3_dep else self._analyt_e3(ds)
+        dse = self._compute_e3(dsz) if self._ln_e3_dep else self._analyt_e3(dsz)
 
-        return dsz
+        return dse
 
     # --------------------------------------------------------------------------
     def _compute_pp(self) -> tuple:
@@ -221,7 +192,7 @@ class Zco(Zgr):
             Stretched coordinate
         """
 
-        kk = sigma * (self._jpk - 1) + 1
+        kk = sigma * (self._jpk - 1.0) + 1.0
 
         if not ldbletanh:
             kth = self._ppkth
@@ -232,6 +203,52 @@ class Zco(Zgr):
 
         ss = np.log(np.cosh((kk - kth) / acr))
         return ss
+
+    # --------------------------------------------------------------------------
+    def _zco_z3(self, ds: Dataset):
+        """
+        Compute z3T/W for z-coordinates grids
+
+        Parameters
+        ----------
+        ds: Dataset
+            xarray dataset with empty ``z3{T,W}``
+        Returns
+        -------
+        ds: Dataset
+            xarray dataset with ``z3{T,W}`` correctly computed
+        """
+
+        sigmas = [self._sigT, self._sigW]
+        sigmas_p1 = [self._sigTp1, self._sigWp1]
+
+        for varname, sig, sig_p1 in zip(["z3T", "z3W"], sigmas, sigmas_p1):
+            for k in range(self._jpk):
+                if self._is_uniform:
+                    # uniform zco grid
+                    su = -sig[{"z": k}]
+                    s1 = s2 = 0.0
+                    a1 = a3 = a4 = 0.0
+                    a2 = self._pphmax
+                else:
+                    # stretched zco grid
+                    su = -sig_p1[{"z": k}]
+                    s1 = self._stretch_zco(-sig[{"z": k}])
+                    a1 = self._ppsur
+                    a2 = self._ppa0 * (self._jpk - 1)
+                    a3 = self._ppa1 * self._ppacr
+                    # double tahh
+                    if self._ldbletanh:
+                        s2 = self._stretch_zco(-sig[{"z": k}], self._ldbletanh)
+                        a4 = self._ppa2 * self._ppacr2
+                    else:
+                        s2 = a4 = 0.0
+                ds[varname][{"z": k}] = self._compute_z3(su, s1, a1, a2, a3, s2, a4)
+
+        # force first w-level to be exactly at zero
+        ds["z3W"][{"z": 0}] = 0.0
+
+        return ds
 
     # --------------------------------------------------------------------------
     def _analyt_e3(self, ds: Dataset):
@@ -250,29 +267,27 @@ class Zco(Zgr):
             xarray dataset with ``e3{T,W}`` correctly computed
         """
 
-        if self._is_uniform:
-            # uniform zco grid
-            ds["e3T"][{"z": slice(self._jpk)}] = self._pphmax * (self._jpk - 1.0)
-            ds["e3W"][{"z": slice(self._jpk)}] = self._pphmax * (self._jpk - 1.0)
-        else:
-            # stretched zco grid
-            ac0 = self._ppa0
-            bc1 = self._ppa1
-            # now faster to use loop, to be optimised
-            # using xarray features in the future
-            for k in range(self._jpk):
-                kT = -self._sigT[{"z": k}] * (self._jpk - 1.0) + 1.0
-                kW = -self._sigW[{"z": k}] * (self._jpk - 1.0) + 1.0
-                bT1 = np.tanh((kT - self._ppkth) / self._ppacr)
-                bW1 = np.tanh((kW - self._ppkth) / self._ppacr)
-                if self._ldbletanh:
-                    cc2 = self._ppa2
-                    cT2 = np.tanh((kT - self._ppkth2) / self._ppacr2)
-                    cW2 = np.tanh((kW - self._ppkth2) / self._ppacr2)
-                else:
-                    cc2 = cT2 = cW2 = 0.0
+        sigmas = [self._sigT, self._sigW]
 
-                ds["e3T"][{"z": k}] = ac0 + bc1 * bT1 + cc2 * cT2
-                ds["e3W"][{"z": k}] = ac0 + bc1 * bW1 + cc2 * cW2
+        for varname, sig in zip(["e3T", "e3W"], sigmas):
+            if self._is_uniform:
+                # uniform zco grid
+                ds[varname][{"z": slice(self._jpk)}] = self._pphmax * (self._jpk - 1.0)
+            else:
+                # stretched zco grid
+                a0 = self._ppa0
+                a1 = self._ppa1
+                # now faster to use loop, to be optimised
+                # using xarray features in the future
+                for k in range(self._jpk):
+                    kk = -sig[{"z": k}] * (self._jpk - 1.0) + 1.0
+                    tanh1 = np.tanh((kk - self._ppkth) / self._ppacr)
+                    if self._ldbletanh:
+                        a2 = self._ppa2
+                        tanh2 = np.tanh((kk - self._ppkth2) / self._ppacr2)
+                    else:
+                        a2 = tanh2 = 0.0
+
+                    ds[varname][{"z": k}] = a0 + a1 * tanh1 + a2 * tanh2
 
         return ds
