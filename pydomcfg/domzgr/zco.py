@@ -117,6 +117,7 @@ class Zco(Zgr):
         self._ppa2 = ppa2
         self._ppkth2 = ppkth2
         self._ppacr2 = ppacr2
+        self._is_uniform = not ppkth or not ppacr
         self._ln_e3_dep = ln_e3_dep
 
         ds = self._init_ds()
