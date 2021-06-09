@@ -170,11 +170,7 @@ class Zco(Zgr):
         ds["z3W"][{"z": 0}] = 0.0
 
         # compute e3 scale factors
-
-        if self._ln_e3_dep:
-            dsz = self._compute_e3(ds)
-        else:
-            dsz = self._analyt_e3(ds)
+        dsz = self._compute_e3(ds) if self._ln_e3_dep else self._analyt_e3(ds)
 
         return dsz
 
