@@ -2,8 +2,9 @@
 Module to generate datasets for testing
 """
 
+import numpy as np
 import xarray as xr
-from xarray import Dataset
+from xarray import Dataset, DataArray
 
 from pydomcfg.utils import generate_cartesian_grid
 
@@ -43,6 +44,48 @@ class Bathymetry:
         ds = self._coords
         ds["Bathymetry"] = xr.full_like(ds["glamt"], depth)
         return _add_attributes(_add_mask(ds))
+    
+    def channel(self, depth: float, stiff=1.0) -> Dataset:
+        """ 
+        Channel with seamount case.
+    
+        Produces bathymetry of a channel with a Gaussian seamount in order to 
+        simulate an idealised test case. Based on Marsaleix et al., 2009
+        doi:10.1016/j.ocemod.2009.06.011 Eq. 15.
+    
+        Parameters
+        ----------
+        depth: float
+            Bottom depth (units: m).
+        stiff: float    
+            Scale factor for steepness of seamount (units: None)
+    
+        Returns
+        -------
+        Dataset
+        """
+        ds = self._coords
+        
+        # Get horizontal grid
+        glamt, gphit = ds.variables['glamt'], ds.variables['gphit']
+        
+        # Find half way point for sea mount location
+        jpi, jpj = ds.dims['x']//2, ds.dims['y']//2
+        glamt_mid, gphit_mid = glamt[jpj, jpi], gphit[jpj, jpi]
+
+        # Define sea mount bathymetry
+        ds["Bathymetry"] = DataArray( 
+                           depth * ( 1. - 0.9 * np.exp( -(stiff/40.e3**2 * 
+                           ((glamt-glamt_mid)**2 + (gphit-gphit_mid)**2)))), 
+                           dims=["y", "x"])
+        
+        # Add rmax of Bathymetry
+        ds["rmax"] = DataArray(_calc_rmax(ds["Bathymetry"].to_masked_array()),
+                               dims=["y", "x"])
+        # TODO: should we be able to the DataArray? If we do, it we get a
+        #       broadcast ValueError
+        
+        return _add_attributes(_add_mask(ds))
 
 
 def _add_mask(ds: Dataset) -> Dataset:
@@ -58,7 +101,7 @@ def _add_mask(ds: Dataset) -> Dataset:
     -------
     Dataset
     """
-    ds["mask"] = xr.where(ds["Bathymetry"] > 0, 1, 0)
+    ds["mask"] = xr.where(ds["Bathymetry"] > 0, 1, 0) # TODO: should this be bool?
     return ds
 
 
@@ -69,17 +112,53 @@ def _add_attributes(ds: Dataset) -> Dataset:
     Parameters
     ----------
     ds: Dataset
-        Dataset with bathymetry and mask variables
+        Dataset with bathymetry and mask variables [and rmax]
 
     Returns
     -------
     Dataset
     """
+    
     attrs_dict = {
         "Bathymetry": dict(standard_name="sea_floor_depth_below_geoid", units="m"),
         "mask": dict(standard_name="sea_binary_mask", units="1"),
     }
+    
+    if 'rmax' in list(ds.keys()): 
+        attrs_dict["rmax"] = dict(standard_name="rmax", units="1")
+        
     for varname, attrs in attrs_dict.items():
         ds[varname].attrs = attrs
         ds[varname].attrs["coordinates"] = "glamt gphit"
     return ds
+
+
+def _calc_rmax(depth):
+    """
+    Calculate rmax: measure of steepness
+    
+    This function returns the slope steepness criteria rmax, which is simply
+    (H[0] - H[1]) / (H[0] + H[1])
+
+    Parameters
+    ----------
+    depth: float
+            Bottom depth (units: m).
+
+    Returns
+    -------
+    rmax: float
+            Slope steepness value (units: None)
+    """   
+    rmax_x, rmax_y = np.zeros_like(depth), np.zeros_like(depth)
+    
+    rmax_x[:,1:-1] = 0.5 * ( np.diff(depth[:,  :-1], axis=1) / 
+                               (depth[:,  :-2] + depth[:, 1:-1]) +
+                             np.diff(depth[:, 1:  ], axis=1) / 
+                               (depth[:, 1:-1] + depth[:, 2:  ]) )
+    rmax_y[1:-1,:] = 0.5 * ( np.diff(depth[ :-1, :], axis=0) / 
+                               (depth[ :-2, :] + depth[1:-1, :]) +
+                             np.diff(depth[1:  , :], axis=0) / 
+                               (depth[1:-1, :] + depth[2:  , :]) )
+        
+    return np.maximum(np.abs(rmax_x), np.abs(rmax_y))
