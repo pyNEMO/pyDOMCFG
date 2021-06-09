@@ -94,7 +94,7 @@ class Bathymetry:
         ds["rmax"] = DataArray(
             _calc_rmax(ds["Bathymetry"].to_masked_array()), dims=["y", "x"]
         )
-        # TODO: should we be able to the DataArray? If we do, it we get a
+        # TODO: should we be able to use the DataArray? If we do, we get a
         #       broadcast ValueError
 
         return _add_attributes(_add_mask(ds))
