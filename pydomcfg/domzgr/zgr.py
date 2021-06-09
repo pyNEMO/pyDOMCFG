@@ -54,7 +54,7 @@ class Zgr:
         return ds
 
     # -------------------------------------------------------------------------
-    def _sigma(self, kindx: DataArray, grd: str):
+    def _sigma(self, kindx: DataArray):
         """
         Provide the analytical function for sigma-coordinate,
         a uniform non-dimensional vertical coordinate describing
@@ -71,21 +71,20 @@ class Zgr:
             Model levels indexes. Note that
             *) T-points are at integer values (between 1 and jpk)
             *) W-points are at integer values - 1/2 (between 0.5 and jpk-0.5)
-        grd: str
-            If we are dealing with "T" or "W" model levels.
 
         Returns
         -------
-        ps: DataArray
-            Uniform non-dimensional sigma-coordinate (-1 <= sigma <= 0)
+        ps: tuple
+            (sigmaT, sigmaW) of Datarrays of uniform non-dimensional
+            sigma-coordinate (-1 <= sigma <= 0) for T and W grids
         """
 
         kindx = kindx + 1.0  # Fortran indexing
 
-        if grd == "W":
-            kindx -= 0.5
+        T = 0.5
+        W = 1.0
+        ps = (-(kindx - shift) / (self._jpk - 1.0) for shift in (T, W))
 
-        ps = -(kindx - 0.5) / float(self._jpk - 1.0)
         return ps
 
     # -------------------------------------------------------------------------

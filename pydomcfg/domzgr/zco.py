@@ -127,27 +127,25 @@ class Zco(Zgr):
 
         # compute sigma-coordinates for z3 computation
         kindx = DataArray(range(self._jpk), coords={"z": range(self._jpk)}, dims="z")
-        self._sigT = -self._sigma(kindx, "T")
-        self._sigW = -self._sigma(kindx, "W")
-        self._sigTp1 = -self._sigma(kindx + 1.0, "T")
-        self._sigWp1 = -self._sigma(kindx + 1.0, "W")
+        self._sigT, self._sigW = self._sigma(kindx)
+        self._sigTp1, self._sigWp1 = self._sigma(kindx + 1.0)
 
         # compute z3 depths of vertical levels
         for k in range(self._jpk):
 
             if self._is_uniform:
                 # uniform zco grid
-                suT = self._sigT[{"z": k}]
-                suW = self._sigW[{"z": k}]
+                suT = -self._sigT[{"z": k}]
+                suW = -self._sigW[{"z": k}]
                 s1T = s1W = s2T = s2W = 0.0
                 a1 = a3 = a4 = 0.0
                 a2 = self._pphmax
             else:
                 # stretched zco grid
-                suT = self._sigTp1[{"z": k}]
-                suW = self._sigWp1[{"z": k}]
-                s1T = self._stretch_zco(self._sigT[{"z": k}])
-                s1W = self._stretch_zco(self._sigW[{"z": k}])
+                suT = -self._sigTp1[{"z": k}]
+                suW = -self._sigWp1[{"z": k}]
+                s1T = self._stretch_zco(-self._sigT[{"z": k}])
+                s1W = self._stretch_zco(-self._sigW[{"z": k}])
                 a1 = self._ppsur
                 a2 = self._ppa0 * (self._jpk - 1)
                 a3 = self._ppa1 * self._ppacr
@@ -157,8 +155,8 @@ class Zco(Zgr):
                         raise ValueError(
                             "ppa2, ppkth2 and ppacr2 must > 0. " "when ldbletanh = True"
                         )
-                    s2T = self._stretch_zco(self._sigT[{"z": k}], self._ldbletanh)
-                    s2W = self._stretch_zco(self._sigW[{"z": k}], self._ldbletanh)
+                    s2T = self._stretch_zco(-self._sigT[{"z": k}], self._ldbletanh)
+                    s2W = self._stretch_zco(-self._sigW[{"z": k}], self._ldbletanh)
                     a4 = self._ppa2 * self._ppacr2
                 else:
                     s2T = s2W = a4 = 0.0
@@ -260,8 +258,8 @@ class Zco(Zgr):
             # now faster to use loop, to be optimised
             # using xarray features in the future
             for k in range(self._jpk):
-                kT = self._sigT[{"z": k}] * (self._jpk - 1.0) + 1.0
-                kW = self._sigW[{"z": k}] * (self._jpk - 1.0) + 1.0
+                kT = -self._sigT[{"z": k}] * (self._jpk - 1.0) + 1.0
+                kW = -self._sigW[{"z": k}] * (self._jpk - 1.0) + 1.0
                 bT1 = np.tanh((kT - self._ppkth) / self._ppacr)
                 bW1 = np.tanh((kW - self._ppkth) / self._ppacr)
                 if self._ldbletanh:
