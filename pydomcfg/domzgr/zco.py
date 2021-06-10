@@ -4,7 +4,7 @@
 Class to generate NEMO v4.0 standard geopotential z-coordinates
 """
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 from xarray import Dataset
@@ -104,9 +104,6 @@ class Zco(Zgr):
         self._pphmax = pphmax
         self._ppkth = ppkth
         self._ppacr = ppacr
-        self._ppsur = ppsur
-        self._ppa0 = ppa0
-        self._ppa1 = ppa1
         self._ldbletanh = ldbletanh
         self._ppa2 = ppa2
         self._ppkth2 = ppkth2
@@ -125,7 +122,7 @@ class Zco(Zgr):
 
         # computing coeff. if needed
         if not self._is_uniform:
-            self._ppsur, self._ppa0, self._ppa1 = self._compute_pp()
+            self._ppsur, self._ppa0, self._ppa1 = self._compute_pp(ppsur, ppa0, ppa1)
 
         # compute sigma-coordinates for z3 computation
         kindx = ds["z"]
@@ -142,19 +139,8 @@ class Zco(Zgr):
         return dse
 
     # --------------------------------------------------------------------------
-    def _compute_pp(self) -> tuple:
-        """
-        Compute the coefficients for zco grid if needed.
-
-        Returns
-        -------
-        tuple
-            (ppsur, ppa0, ppa1)
-
-        """
-        pp_in = (self._ppsur, self._ppa0, self._ppa1)
-        if not all(is_nemo_none(pp) for pp in pp_in):
-            return pp_in
+    def _compute_pp(self, ppsur, ppa0, ppa1) -> Tuple[float, ...]:
+        """Compute the coefficients for zco grid if needed."""
 
         aa = self._ppdzmin - self._pphmax / float(self._jpk - 1)
         bb = np.tanh((1 - self._ppkth) / self._ppacr)
@@ -162,9 +148,9 @@ class Zco(Zgr):
         dd = np.log(np.cosh((self._jpk - self._ppkth) / self._ppacr))
         ee = np.log(np.cosh((1.0 - self._ppkth) / self._ppacr))
 
-        ppa1 = aa / (bb - cc * (dd - ee))
-        ppa0 = self._ppdzmin - ppa1 * bb
-        ppsur = -(ppa0 + ppa1 * self._ppacr * ee)
+        ppa1 = aa / (bb - cc * (dd - ee)) if is_nemo_none(ppa1) else ppa1
+        ppa0 = self._ppdzmin - ppa1 * bb if is_nemo_none(ppa0) else ppa0
+        ppsur = -(ppa0 + ppa1 * self._ppacr * ee) if is_nemo_none(ppsur) else ppsur
 
         return (ppsur, ppa0, ppa1)
 
