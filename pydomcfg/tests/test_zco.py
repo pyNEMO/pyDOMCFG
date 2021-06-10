@@ -90,7 +90,7 @@ def test_zco_orca2():
     # reference ocean.output values are
     # given with 4 digits precision
     eps = 1.0e-5
-    for var, n in zip(varname, range(expected.shape[1])):
+    for n, var in enumerate(varname):
         actual = dsz_an[var].values[:, j2, i2]
         np.testing.assert_allclose(expected[:, n], actual, rtol=eps, atol=0)
 
@@ -124,7 +124,4 @@ def test_zco_uniform():
 
     # truncation errors
     eps = 1.0e-14
-    for var in dsz_an.variables:
-        actual = dsz_fd[var]
-        expected = dsz_an[var]
-        xr.testing.assert_allclose(expected, actual, rtol=eps, atol=0)
+    xr.testing.assert_allclose(dsz_fd, dsz_an, rtol=eps, atol=0)
