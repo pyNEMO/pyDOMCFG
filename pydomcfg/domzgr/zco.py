@@ -130,7 +130,8 @@ class Zco(Zgr):
         ds = self._init_ds()
 
         # computing coeff. if needed
-        self._ppsur, self._ppa0, self._ppa1 = self._compute_pp()
+        if not self._is_uniform:
+            self._ppsur, self._ppa0, self._ppa1 = self._compute_pp()
 
         # compute sigma-coordinates for z3 computation
         kindx = ds["z"]
@@ -272,7 +273,7 @@ class Zco(Zgr):
         for varname, sig in zip(["e3T", "e3W"], sigmas):
             if self._is_uniform:
                 # uniform zco grid
-                ds[varname][{"z": slice(self._jpk)}] = self._pphmax * (self._jpk - 1.0)
+                ds[varname][{"z": slice(self._jpk)}] = self._pphmax / (self._jpk - 1.0)
             else:
                 # stretched zco grid
                 a0 = self._ppa0
