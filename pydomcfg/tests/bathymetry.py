@@ -45,7 +45,7 @@ class Bathymetry:
         ds["Bathymetry"] = xr.full_like(ds["glamt"], depth)
         return _add_attributes(_add_mask(ds))
 
-    def channel(self, depth: float, stiff=1.0) -> Dataset:
+    def sea_mount(self, depth: float, stiff=1.0) -> Dataset:
         """
         Channel with seamount case.
 
@@ -66,35 +66,28 @@ class Bathymetry:
         """
         ds = self._coords
 
-        # Get horizontal grid
-        glamt, gphit = ds.variables["glamt"], ds.variables["gphit"]
-
         # Find half way point for sea mount location
-        jpi, jpj = ds.dims["x"] // 2, ds.dims["y"] // 2
-        glamt_mid, gphit_mid = glamt[jpj, jpi], gphit[jpj, jpi]
+        half_way = {k: v // 2 for k, v in ds.sizes.items()}
+        glamt_mid, gphit_mid = (g.isel(half_way) for g in (ds.glamt, ds.gphit))
 
         # Define sea mount bathymetry
-        ds["Bathymetry"] = DataArray(
-            depth
-            * (
-                1.0
-                - 0.9
-                * np.exp(
-                    -(
-                        stiff
-                        / 40.0e3 ** 2
-                        * ((glamt - glamt_mid) ** 2 + (gphit - gphit_mid) ** 2)
-                    )
+        ds["Bathymetry"] = depth * (
+            1.0
+            - 0.9
+            * np.exp(
+                -(
+                    stiff
+                    / 40.0e3 ** 2
+                    * ((ds.glamt - glamt_mid) ** 2 + (ds.gphit - gphit_mid) ** 2)
                 )
-            ),
-            dims=["y", "x"],
+            )
         )
 
         # Add rmax of Bathymetry
         ds["rmax"] = DataArray(
             _calc_rmax(ds["Bathymetry"].to_masked_array()), dims=["y", "x"]
         )
-        # TODO: should we be able to the DataArray? If we do, it we get a
+        # TODO: should we be able to us the DataArray? If we do, we get a
         #       broadcast ValueError
 
         return _add_attributes(_add_mask(ds))
