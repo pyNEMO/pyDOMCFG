@@ -9,6 +9,23 @@ import xarray as xr
 from xarray import DataArray, Dataset
 
 
+def is_nemo_none(var: Optional[float] = None) -> bool:
+    """
+    Assess if a namelist parameter is None
+
+    Parameters
+    ----------
+    var: float, optional
+        Variable to be tested
+
+    Returns
+    -------
+    bool
+        True if the namelist parameter has to be considered as None
+    """
+    return var in [None, 999999.0]
+
+
 def generate_cartesian_grid(
     ppe1_m,
     ppe2_m,

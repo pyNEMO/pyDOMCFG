@@ -4,20 +4,17 @@
 Class to generate NEMO v4.0 standard geopotential z-coordinates
 """
 
+from typing import Optional
 
 import numpy as np
 from xarray import Dataset
+
+from pydomcfg.utils import is_nemo_none
 
 from .zgr import Zgr
 
 
 class Zco(Zgr):
-
-    # In future we may want to get rid of this
-    # and use a more pythonic way. We could do
-    # it when  we read the namelist.
-    pp_to_be_computed = 999999.0
-
     """
     Class to generate geopotential z-coordinates dataset objects.
 
@@ -40,13 +37,13 @@ class Zco(Zgr):
     # --------------------------------------------------------------------------
     def __call__(
         self,
-        ppdzmin,
-        pphmax,
+        ppdzmin: float,
+        pphmax: float,
         ppkth: float = 0.0,
         ppacr: int = 0,
-        ppsur: float = pp_to_be_computed,
-        ppa0: float = pp_to_be_computed,
-        ppa1: float = pp_to_be_computed,
+        ppsur: Optional[float] = None,
+        ppa0: Optional[float] = None,
+        ppa1: Optional[float] = None,
         ldbletanh: bool = False,
         ppa2: float = 0.0,
         ppkth2: float = 0.0,
@@ -70,18 +67,15 @@ class Zco(Zgr):
             Model level at which approximately max stretching occurs.
             Nondimensional > 0, usually of order 1/2 or 2/3 of jpk.
             (default = 0., i.e. no stretching, uniform grid)
-        ppsur: float
+        ppsur: float, optional
             Coeff. controlling distibution of vertical levels
-            (default = pp_to_be_computed, i.e. computed from
-            ppdzmin, pphmax, ppkth and ppacr)
-        ppa0: float
+            (default = None, i.e. computed from ppdzmin, pphmax, ppkth and ppacr)
+        ppa0: float, optional
             Coeff. controlling distibution of vertical levels
-            (default = pp_to_be_computed, i.e. computed from
-            ppdzmin, pphmax, ppkth and ppacr)
-        ppa1: float
+            (default = None, i.e. computed from ppdzmin, pphmax, ppkth and ppacr)
+        ppa1: float, optional
             Coeff. controlling distibution of vertical levels
-            (default = pp_to_be_computed, i.e. computed from
-            ppdzmin, pphmax, ppkth and ppacr)
+            (default = None, i.e. computed from ppdzmin, pphmax, ppkth and ppacr)
         ldbletanh: bool
             Logical flag to use or not double tanh stretching function
             (default = False)
@@ -159,7 +153,7 @@ class Zco(Zgr):
 
         """
         pp_in = (self._ppsur, self._ppa0, self._ppa1)
-        if not pp_in.count(self.pp_to_be_computed):
+        if not all(is_nemo_none(pp) for pp in pp_in):
             return pp_in
 
         aa = self._ppdzmin - self._pphmax / float(self._jpk - 1)
@@ -169,8 +163,8 @@ class Zco(Zgr):
         ee = np.log(np.cosh((1.0 - self._ppkth) / self._ppacr))
 
         ppa1 = aa / (bb - cc * (dd - ee))
-        ppa0 = self._ppdzmin - self._ppa1 * bb
-        ppsur = -(self._ppa0 + self._ppa1 * self._ppacr * ee)
+        ppa0 = self._ppdzmin - ppa1 * bb
+        ppsur = -(ppa0 + ppa1 * self._ppacr * ee)
 
         return (ppsur, ppa0, ppa1)
 
@@ -236,7 +230,7 @@ class Zco(Zgr):
                     su = -sig_p1[{"z": k}]
                     s1 = self._stretch_zco(-sig[{"z": k}])
                     a1 = self._ppsur
-                    a2 = self._ppa0 * (self._jpk - 1)
+                    a2 = self._ppa0 * (self._jpk - 1.0)
                     a3 = self._ppa1 * self._ppacr
                     # double tahh
                     if self._ldbletanh:
