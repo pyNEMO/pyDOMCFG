@@ -68,9 +68,6 @@ class Zgr:
         Parameters
         ----------
         kindx: DataArray
-            Model levels indexes. Note that
-            *) T-points are at integer values (between 1 and jpk)
-            *) W-points are at integer values - 1/2 (between 0.5 and jpk-0.5)
 
         Returns
         -------
@@ -79,11 +76,9 @@ class Zgr:
             sigma-coordinate (-1 <= sigma <= 0) for T and W grids
         """
 
-        kindx = kindx + 1.0  # Fortran indexing
-
-        T = 0.5
-        W = 1.0
-        ps = (-(kindx - shift) / (self._jpk - 1.0) for shift in (T, W))
+        k_T = kindx + 0.5
+        k_W = kindx
+        ps = (-k / (self._jpk - 1.0) for k in (k_T, k_W))
 
         return ps
 
