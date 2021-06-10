@@ -1,5 +1,5 @@
 """
-Test for zco
+Tests for zco
 """
 
 import numpy as np
@@ -9,23 +9,14 @@ from pydomcfg.domzgr.zco import Zco
 from pydomcfg.tests.bathymetry import Bathymetry
 
 
-def test_zco():
+def test_zco_orca2():
     """
-    The test includes:
-
-    1. Reproducing ORCA2 grid z3T/W and e3T/W as computed by
-       NEMO v3.6 (see pag 62 of v3.6 manual for the input parameters).
-       This test validates stretched grids with analytical e3 and no
-       double tanh.
-
-    2. Reproducing z3T/W and e3T/W of a uniform grid with 51 levels.
-       This test validates uniform grids with both anaytical and
-       finite difference e3.
+    The test consists in reproducing ORCA2 grid
+    z3T/W and e3T/W as computed by NEMO v3.6
+    (see pag 62 of v3.6 manual for the input parameters).
+    This test validates stretched grids with analytical e3 and no
+    double tanh.
     """
-
-    # ========
-    # TEST 1
-    # ========
 
     # Results to replicate:
     # ORCA2 zco model levels depth and vertical
@@ -103,9 +94,13 @@ def test_zco():
         actual = dsz_an[var].values[:, j2, i2]
         np.testing.assert_allclose(expected[:, n], actual, rtol=eps, atol=0)
 
-    # ========
-    # TEST 2
-    # ========
+
+def test_zco_uniform():
+    """
+    The test consists in comparing z3T/W and e3T/W of
+    a uniform grid with 51 levels computed with both
+    anaytical and finite differences e3.
+    """
 
     # Input parameters
     ppdzmin = 10.0
@@ -114,6 +109,9 @@ def test_zco():
     ppacr = 0.0
 
     jpk = 51
+
+    # Bathymetry dataset
+    ds_bathy = Bathymetry(1000.0, 1200.0, 100, 200).flat(5000.0)
 
     # zco grid generator
     zco = Zco(ds_bathy, jpk)
