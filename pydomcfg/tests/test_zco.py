@@ -109,7 +109,7 @@ def test_zco_uniform():
     jpk = 51
 
     # Bathymetry dataset
-    ds_bathy = Bathymetry(1000.0, 1200.0, 100, 200).flat(5000.0)
+    ds_bathy = Bathymetry(1000.0, 1200.0, 1, 1).flat(5000.0)
 
     # zco grid generator
     zco = Zco(ds_bathy, jpk)
