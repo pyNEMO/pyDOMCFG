@@ -74,7 +74,7 @@ def test_zco_orca2():
     jpk = 31
 
     # Bathymetry dataset
-    ds_bathy = Bathymetry(1000.0, 1200.0, 100, 200).flat(5000.0)
+    ds_bathy = Bathymetry(1000.0, 1200.0, 1, 1).flat(5000.0)
 
     # zco grid generator
     zco = Zco(ds_bathy, jpk)
@@ -85,13 +85,11 @@ def test_zco_orca2():
     )
 
     varname = ["z3T", "z3W", "e3T", "e3W"]
-    i2 = 50
-    j2 = 100
     # reference ocean.output values are
     # given with 4 digits precision
     eps = 1.0e-5
     for n, var in enumerate(varname):
-        actual = dsz_an[var].values[:, j2, i2]
+        actual = dsz_an[var].squeeze().values
         np.testing.assert_allclose(expected[:, n], actual, rtol=eps, atol=0)
 
 
