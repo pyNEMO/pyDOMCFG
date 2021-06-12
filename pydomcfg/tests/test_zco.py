@@ -6,7 +6,8 @@ import numpy as np
 import xarray as xr
 
 from pydomcfg.domzgr.zco import Zco
-from pydomcfg.tests.bathymetry import Bathymetry
+
+from .bathymetry import Bathymetry
 
 
 def test_zco_orca2():
@@ -123,3 +124,16 @@ def test_zco_uniform():
     # truncation errors
     eps = 1.0e-14
     xr.testing.assert_allclose(dsz_fd, dsz_an, rtol=eps, atol=0)
+
+
+def test_zco_x_y_invariant():
+    """Make sure all vertical columns are identical"""
+
+    # Generate 2x2 flat bathymetry dataset
+    ds_bathy = Bathymetry(1000.0, 1200.0, 2, 2).flat(5000.0)
+    zco = Zco(ds_bathy, 10)
+    ds = zco(10.0, 5.0e3)
+
+    # Check z3 and e3
+    for var in ["z3T", "z3W", "e3T", "e3W"]:
+        assert (ds[var] == ds[var].mean(["x", "y"])).all()
