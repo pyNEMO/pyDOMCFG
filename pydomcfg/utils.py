@@ -2,28 +2,24 @@
 Utilities
 """
 
-from typing import Dict, Optional
+from typing import Hashable, Iterable, Iterator, Optional
 
 import numpy as np
 import xarray as xr
 from xarray import DataArray, Dataset
 
+NEMO_NONE = 999_999
 
-def is_nemo_none(var: Optional[float] = None) -> bool:
-    """
-    Assess if a namelist parameter is None
 
-    Parameters
-    ----------
-    var: float, optional
-        Variable to be tested
+def _is_nemo_none(var: Hashable) -> bool:
+    """Assess if a NEMO parameter is None"""
+    return (var or NEMO_NONE) == NEMO_NONE
 
-    Returns
-    -------
-    bool
-        True if the namelist parameter has to be considered as None
-    """
-    return var in [None, 999999.0]
+
+def _are_nemo_none(var: Iterable) -> Iterator[bool]:
+    """Iterate over namelist parameters and assess if they are None"""
+    for v in var:
+        yield _is_nemo_none(v)
 
 
 def generate_cartesian_grid(
@@ -33,7 +29,7 @@ def generate_cartesian_grid(
     jpjglo: Optional[int] = None,
     ppglam0: float = 0,
     ppgphi0: float = 0,
-    chunks: Optional[Dict[str, int]] = None,
+    chunks: Optional[dict] = None,
 ) -> Dataset:
     """
     Generate coordinates and spacing of a NEMO Cartesian grid.
@@ -80,7 +76,7 @@ def generate_cartesian_grid(
             )
 
         # c: center f:face
-        delta_c = DataArray(ppe if ppe.shape else np.full(jp, ppe), dims=dim)
+        delta_c = DataArray(ppe if ppe.shape else ppe.repeat(jp), dims=dim)
         coord_f = delta_c.cumsum(dim) + (ppg - 0.5 * delta_c[0])
         coord_c = coord_f.rolling({dim: 2}).mean().fillna(ppg)
         delta_f = coord_c.diff(dim).pad({dim: (0, 1)}, constant_values=delta_c[-1])
