@@ -2,11 +2,28 @@
 Utilities
 """
 
-from typing import Optional
+from typing import Dict, Optional
 
 import numpy as np
 import xarray as xr
 from xarray import DataArray, Dataset
+
+
+def is_nemo_none(var: Optional[float] = None) -> bool:
+    """
+    Assess if a namelist parameter is None
+
+    Parameters
+    ----------
+    var: float, optional
+        Variable to be tested
+
+    Returns
+    -------
+    bool
+        True if the namelist parameter has to be considered as None
+    """
+    return var in [None, 999999.0]
 
 
 def generate_cartesian_grid(
@@ -16,6 +33,7 @@ def generate_cartesian_grid(
     jpjglo: Optional[int] = None,
     ppglam0: float = 0,
     ppgphi0: float = 0,
+    chunks: Optional[Dict[str, int]] = None,
 ) -> Dataset:
     """
     Generate coordinates and spacing of a NEMO Cartesian grid.
@@ -28,6 +46,9 @@ def generate_cartesian_grid(
         Size of x/y dimension.
     ppglam0, ppgphi0: float
         x/y coordinate of first T-point (units: m).
+    chunks: dict, optional
+         Chunk sizes along each dimension (e.g., ``{"x": 5, "y": 5}``).
+         Requires ``dask`` installed.
 
     Returns
     -------
@@ -37,7 +58,12 @@ def generate_cartesian_grid(
     Raises
     ------
     ValueError
-        If ppe{1,2}_m is a vector and jp{i,j}glo is specified, or viceversa.
+        If ``ppe{1,2}_m`` is a vector and ``jp{i,j}glo`` is specified, or viceversa.
+
+    Notes
+    -----
+    Vectors are loaded into memory. If ``chunks`` is specified, 2D arrays are coerced
+    into dask arrays before broadcasting.
     """
 
     ds = Dataset()
@@ -45,17 +71,16 @@ def generate_cartesian_grid(
         ["x", "y"], [ppe1_m, ppe2_m], [jpiglo, jpjglo], [ppglam0, ppgphi0]
     ):
 
-        # Check and convert ppe to array
+        # Check and convert ppe to numpy array
         ppe = np.asarray(ppe, dtype=float)
         if (ppe.shape and jp) or (not ppe.shape and not jp):
             raise ValueError(
-                "jp{i,j}glo must be specified"
-                " if and only if ppe{1,2}_m is not a vector."
+                "`jp{i,j}glo` must be specified"
+                " if and only if `ppe{1,2}_m` is not a vector."
             )
-        ppe = ppe if ppe.shape else np.full(jp, ppe)
 
         # c: center f:face
-        delta_c = DataArray(ppe, dims=dim)
+        delta_c = DataArray(ppe if ppe.shape else np.full(jp, ppe), dims=dim)
         coord_f = delta_c.cumsum(dim) + (ppg - 0.5 * delta_c[0])
         coord_c = coord_f.rolling({dim: 2}).mean().fillna(ppg)
         delta_f = coord_c.diff(dim).pad({dim: (0, 1)}, constant_values=delta_c[-1])
@@ -68,7 +93,7 @@ def generate_cartesian_grid(
         for da in [delta_c, delta_f]:
             da.attrs = dict(units="m", long_name=f"{dim}-axis spacing")
 
-        # Fill dataset and add attributes
+        # Fill dataset
         eprefix = "e" + ("1" if dim == "x" else "2")
         gprefix = "g" + ("lam" if dim == "x" else "phi")
         nav_coord = "nav_" + ("lon" if dim == "x" else "lat")
@@ -79,13 +104,13 @@ def generate_cartesian_grid(
         ds[eprefix + "t"] = ds[eprefix + vel_c] = delta_c
         ds[eprefix + "f"] = ds[eprefix + vel_f] = delta_f
 
-        # Upgrade dimension to coordinate so we cann add CF-attributes
+        # Upgrade dimension to coordinate so we can add CF-attributes
         ds[dim] = ds[dim]
-        ds[dim].attrs = dict(axis=dim.upper())
+        ds[dim].attrs = dict(axis=dim.upper(), long_name=f"{dim}-dimension index")
 
-    # Generate 2D coordinates
-    # Order dims (y, x) for convenience (e.g., for plotting)
-    (ds,) = xr.broadcast(ds)
+    # Generate 2D coordinates (create dask arrays before broadcasting).
+    # Order dims (y, x) for convenience (e.g., for plotting).
+    (ds,) = xr.broadcast(ds if chunks is None else ds.chunk(chunks))
     ds = ds.transpose(*("y", "x"))
 
     return ds.set_coords(ds.variables)
