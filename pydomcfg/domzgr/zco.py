@@ -149,7 +149,7 @@ class Zco(Zgr):
             if not all(_are_nemo_none((ppsur, ppa0, ppa1))):
                 warnings.warn(
                     "Uniform grid case (no stretching):"
-                    " ppsur, ppa0, and ppa1 are ignored because ppacr == ppkth == 0."
+                    " ppsur, ppa0 and ppa1 are ignored when ppacr == ppkth == 0"
                 )
 
             return (0, 0, 0)
@@ -283,9 +283,8 @@ class Zco(Zgr):
 
         return tuple(zco_e3)
 
-    @staticmethod
     def _get_ldbletanh_and_pp2(
-        ldbletanh: Optional[bool], pp2: Tuple[Optional[float], ...]
+        self, ldbletanh: Optional[bool], pp2: Tuple[Optional[float], ...]
     ) -> Tuple[bool, Tuple[float, ...]]:
         """
         If ldbletanh is None, its bool value is inferred from pp2.
@@ -294,17 +293,29 @@ class Zco(Zgr):
 
         pp_are_none = tuple(pp is None for pp in pp2)
         prefix_msg = "ppa2, ppkth2 and ppacr2"
+        ldbletanh_out = ldbletanh if (ldbletanh is not None) else not any(pp_are_none)
 
-        # Errors
+        # Warnings: Ignore double tanh coeffiecients
+        if ldbletanh_out and self._is_uniform:
+            # Uniform and double tanh
+            warning_msg = (
+                "Uniform grid case (no stretching):"
+                f" {prefix_msg} are ignored when ppacr == ppkth == 0"
+            )
+        elif ldbletanh is False and not all(pp_are_none):
+            # ldbletanh False and double tanh coefficients specified
+            warning_msg = f"{prefix_msg} are ignored when ldbletanh is False"
+        else:
+            warning_msg = ""
+
+        if warning_msg:
+            warnings.warn(warning_msg)
+            return (False, (0, 0, 0))
+
+        # Errors: Wrong types
         if ldbletanh is True and any(pp_are_none):
             raise ValueError(f"{prefix_msg} MUST be all float when ldbletanh is True")
         if ldbletanh is None and (any(pp_are_none) and not all(pp_are_none)):
             raise ValueError(f"{prefix_msg} MUST be all None or float")
 
-        # Warning
-        if ldbletanh is False and not all(pp_are_none):
-            warnings.warn(f"{prefix_msg} are ignored when ldbletanh is False")
-
-        ldbletanh = ldbletanh if (ldbletanh is not None) else not any(pp_are_none)
-
-        return (ldbletanh, tuple(pp or 0 for pp in pp2))
+        return (ldbletanh_out, tuple(pp or 0 for pp in pp2))

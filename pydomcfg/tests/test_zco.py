@@ -72,9 +72,8 @@ def test_zco_uniform():
     zco = Zco(ds_bathy, jpk=51)
 
     # Compare zco mesh with analytical VS finite difference e3
-    expected, actual = (
-        zco(**kwargs, ln_e3_dep=ln_e3_dep) for ln_e3_dep in (True, False)
-    )
+    expected = zco(**kwargs, ln_e3_dep=True)
+    actual = zco(**kwargs, ln_e3_dep=False)
     eps = 1.0e-14  # truncation errors
     xr.testing.assert_allclose(expected, actual, rtol=eps, atol=0)
 
@@ -98,34 +97,54 @@ def test_zco_errors():
     """Make sure we raise informative errors"""
 
     # Input parameters
-    kwargs = dict(ppdzmin=10, pphmax=5.0e3)
+    kwargs = dict(ppdzmin=10, pphmax=5.0e3, ppkth=1, ppacr=1)
 
     # Generate test data
     ds_bathy = Bathymetry(1.0e3, 1.2e3, 1, 1).flat(5.0e3)
     zco = Zco(ds_bathy, jpk=10)
 
     # Without ldbletanh flag, only allow all pps set or none of them
-    with pytest.raises(ValueError, match="ppa2.*MUST be all None or float"):
-        zco(**kwargs, ppa2=1)
+    with pytest.raises(
+        ValueError, match="ppa2, ppkth2 and ppacr2 MUST be all None or float"
+    ):
+        zco(**kwargs, ppa2=1, ppkth2=1, ppacr2=None)
 
     # When ldbletanh flag is True, all coefficients must be specified
-    with pytest.raises(ValueError, match="ppa2.*MUST be all float"):
-        zco(**kwargs, ldbletanh=True, ppa2=None)
+    with pytest.raises(ValueError, match="ppa2, ppkth2 and ppacr2 MUST be all float"):
+        zco(**kwargs, ldbletanh=True, ppa2=1, ppkth2=1, ppacr2=None)
 
 
-@pytest.mark.parametrize("ppname", ("ppa2", "ppsur"))
-def test_zco_warnings(ppname):
+def test_zco_warnings():
     """Make sure we warn when arguments are ignored"""
 
-    # Input parameters
-    kwargs = dict(ppdzmin=10, pphmax=5.0e3)
-
-    # Generate test data
+    # Initialize test class
     ds_bathy = Bathymetry(1.0e3, 1.2e3, 1, 1).flat(5.0e3)
     zco = Zco(ds_bathy, jpk=10)
 
-    # Warnings (ignored arguments)
-    expected = zco(**kwargs)
-    with pytest.warns(UserWarning, match=f"{ppname}.*are ignored"):
-        actual = zco(**kwargs, ldbletanh=False, **{ppname: 1})
+    # Uniform: Ignore coefficients controlling stretching
+    kwargs = dict(ppdzmin=10, pphmax=5.0e3, ppkth=0, ppacr=0)
+    expected = zco(**kwargs, ppsur=None, ppa0=None, ppa1=None)
+    with pytest.warns(
+        UserWarning, match="ppsur, ppa0 and ppa1 are ignored when ppacr == ppkth == 0"
+    ):
+        actual = zco(**kwargs, ppsur=2, ppa0=2, ppa1=2)
+    xr.testing.assert_identical(expected, actual)
+
+    # ldbletanh = False : Ignore parameters controlling double tanh
+    kwargs = dict(ppdzmin=10, pphmax=5.0e3, ldbletanh=False)
+    expected = zco(**kwargs, ppa2=None, ppkth2=None, ppacr2=None)
+    with pytest.warns(
+        UserWarning, match="ppa2, ppkth2 and ppacr2 are ignored when ldbletanh is False"
+    ):
+        actual = zco(**kwargs, ppa2=2, ppkth2=2, ppacr2=2)
+    xr.testing.assert_identical(expected, actual)
+
+    # Uniform case: Ignore double tanh
+    kwargs = dict(ppdzmin=10, pphmax=5.0e3, ppkth=0, ppacr=0)
+    expected = zco(**kwargs, ppa2=None, ppkth2=None, ppacr2=None)
+    with pytest.warns(
+        UserWarning,
+        match="ppa2, ppkth2 and ppacr2 are ignored when ppacr == ppkth == 0",
+    ):
+        actual = zco(**kwargs, ppa2=2, ppkth2=2, ppacr2=2)
     xr.testing.assert_identical(expected, actual)
