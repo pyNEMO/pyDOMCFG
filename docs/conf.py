@@ -61,6 +61,9 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # Darglint is already forcing us to have consistent types in the docstring.
 autodoc_typehints = "none"
 
+# Do not warn about missing "Methods" in class docstring
+numpydoc_show_class_members = False
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
