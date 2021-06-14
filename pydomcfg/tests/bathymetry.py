@@ -4,7 +4,7 @@ Module to generate datasets for testing
 
 import numpy as np
 import xarray as xr
-from xarray import DataArray, Dataset
+from xarray import Dataset
 
 from pydomcfg.utils import generate_cartesian_grid
 
@@ -84,14 +84,12 @@ class Bathymetry:
         )
 
         # Add rmax of Bathymetry
-        ds["rmax"] = DataArray(
-            _calc_rmax(ds["Bathymetry"].to_masked_array()), dims=["y", "x"]
-        )
-        # TODO: should we be able to use the DataArray? If we do, we get a
-        #       broadcast ValueError
+        #ds["rmax"] = DataArray(
+        #    _calc_rmax(ds["Bathymetry"].to_masked_array()), dims=["y", "x"]
+        #)
+        ds["rmax"] = _calc_rmax(ds["Bathymetry"])
 
         return _add_attributes(_add_mask(ds))
-
 
 def _add_mask(ds: Dataset) -> Dataset:
     """
@@ -129,7 +127,7 @@ def _add_attributes(ds: Dataset) -> Dataset:
         "mask": dict(standard_name="sea_binary_mask", units="1"),
     }
 
-    if "rmax" in list(ds.keys()):
+    if "rmax" in ds:
         attrs_dict["rmax"] = dict(standard_name="rmax", units="1")
 
     for varname, attrs in attrs_dict.items():
@@ -155,15 +153,22 @@ def _calc_rmax(depth):
     rmax: float
             Slope steepness value (units: None)
     """
-    rmax_x, rmax_y = np.zeros_like(depth), np.zeros_like(depth)
+    depth = depth.reset_index(list(depth.dims))
+    
+    both_rmax = []
+    for dim in depth.dims:
+        
+        # (H[0] - H[1]) / (H[0] + H[1])
+        depth_diff = depth.diff(dim)
+        depth_rolling_sum = depth.rolling({dim: 2}).sum().dropna(dim)
+        rmax = depth_diff / depth_rolling_sum
+        
+        # (R[0] + R[1]) / 2
+        rmax = rmax.rolling({dim: 2}).mean().dropna(dim)
+        
+        # Fill first row and column
+        rmax = rmax.pad({dim: (1, 1)}, constant_values=0)  
+        
+        both_rmax.append(np.abs(rmax))
 
-    rmax_x[:, 1:-1] = 0.5 * (
-        np.diff(depth[:, :-1], axis=1) / (depth[:, :-2] + depth[:, 1:-1])
-        + np.diff(depth[:, 1:], axis=1) / (depth[:, 1:-1] + depth[:, 2:])
-    )
-    rmax_y[1:-1, :] = 0.5 * (
-        np.diff(depth[:-1, :], axis=0) / (depth[:-2, :] + depth[1:-1, :])
-        + np.diff(depth[1:, :], axis=0) / (depth[1:-1, :] + depth[2:, :])
-    )
-
-    return np.maximum(np.abs(rmax_x), np.abs(rmax_y))
+    return np.maximum(*both_rmax)
