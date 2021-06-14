@@ -84,12 +84,13 @@ class Bathymetry:
         )
 
         # Add rmax of Bathymetry
-        #ds["rmax"] = DataArray(
+        # ds["rmax"] = DataArray(
         #    _calc_rmax(ds["Bathymetry"].to_masked_array()), dims=["y", "x"]
-        #)
+        # )
         ds["rmax"] = _calc_rmax(ds["Bathymetry"])
 
         return _add_attributes(_add_mask(ds))
+
 
 def _add_mask(ds: Dataset) -> Dataset:
     """
@@ -154,21 +155,21 @@ def _calc_rmax(depth):
             Slope steepness value (units: None)
     """
     depth = depth.reset_index(list(depth.dims))
-    
+
     both_rmax = []
     for dim in depth.dims:
-        
+
         # (H[0] - H[1]) / (H[0] + H[1])
         depth_diff = depth.diff(dim)
         depth_rolling_sum = depth.rolling({dim: 2}).sum().dropna(dim)
         rmax = depth_diff / depth_rolling_sum
-        
+
         # (R[0] + R[1]) / 2
         rmax = rmax.rolling({dim: 2}).mean().dropna(dim)
-        
+
         # Fill first row and column
-        rmax = rmax.pad({dim: (1, 1)}, constant_values=0)  
-        
+        rmax = rmax.pad({dim: (1, 1)}, constant_values=0)
+
         both_rmax.append(np.abs(rmax))
 
     return np.maximum(*both_rmax)
