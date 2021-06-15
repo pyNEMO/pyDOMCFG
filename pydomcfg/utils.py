@@ -8,6 +8,7 @@ import numpy as np
 import xarray as xr
 from xarray import DataArray, Dataset
 
+
 # -----------------------------------------------------------------------------
 def is_nemo_none(var: Optional[float] = None) -> bool:
     """
@@ -25,11 +26,12 @@ def is_nemo_none(var: Optional[float] = None) -> bool:
     """
     return var in [None, 999999.0]
 
+
 # -----------------------------------------------------------------------------
 def calc_rmax(depth: DataArray) -> DataArray:
     """
     Calculate rmax: measure of steepness
-    This function returns the maximum slope paramater 
+    This function returns the maximum slope paramater
 
        rmax = abs(Hb - Ha) / (Ha + Hb)
 
@@ -67,6 +69,7 @@ def calc_rmax(depth: DataArray) -> DataArray:
         both_rmax.append(np.abs(rmax))
 
     return np.maximum(*both_rmax)
+
 
 # -----------------------------------------------------------------------------
 def generate_cartesian_grid(
