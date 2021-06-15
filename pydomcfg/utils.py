@@ -8,7 +8,7 @@ import numpy as np
 import xarray as xr
 from xarray import DataArray, Dataset
 
-
+# -----------------------------------------------------------------------------
 def is_nemo_none(var: Optional[float] = None) -> bool:
     """
     Assess if a namelist parameter is None
@@ -25,7 +25,50 @@ def is_nemo_none(var: Optional[float] = None) -> bool:
     """
     return var in [None, 999999.0]
 
+# -----------------------------------------------------------------------------
+def calc_rmax(depth: DataArray) -> DataArray:
+    """
+    Calculate rmax: measure of steepness
+    This function returns the maximum slope paramater 
 
+       rmax = abs(Hb - Ha) / (Ha + Hb)
+
+    where Ha and Hb are the depths of adjacent grid cells (Mellor et al 1998).
+
+    Reference:
+      *) Mellor, Oey & Ezer, J Atm. Oce. Tech. 15(5):1122-1131, 1998.
+
+    Parameters
+    ----------
+    depth: DataArray
+        Bottom depth (units: m).
+    Returns
+    -------
+    rmax: DataArray
+        Maximum slope parameter (units: None)
+    """
+
+    depth = depth.reset_index(list(depth.dims))
+
+    both_rmax = []
+    for dim in depth.dims:
+
+        # (Hb - Ha) / (Ha + Hb)
+        depth_diff = depth.diff(dim)
+        depth_rolling_sum = depth.rolling({dim: 2}).sum().dropna(dim)
+        rmax = depth_diff / depth_rolling_sum
+
+        # (rmax_a + rmax_b) / 2
+        rmax = rmax.rolling({dim: 2}).mean().dropna(dim)
+
+        # Fill first row and column
+        rmax = rmax.pad({dim: (1, 1)}, constant_values=0)
+
+        both_rmax.append(np.abs(rmax))
+
+    return np.maximum(*both_rmax)
+
+# -----------------------------------------------------------------------------
 def generate_cartesian_grid(
     ppe1_m,
     ppe2_m,
