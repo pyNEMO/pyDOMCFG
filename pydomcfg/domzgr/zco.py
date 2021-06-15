@@ -124,12 +124,12 @@ class Zco(Zgr):
         self._sigmas = self._compute_sigma(self._z)
 
         # Compute z3 depths of zco vertical levels
-        zco_z3 = self._zco_z3
+        z3t, z3w = self._zco_z3
 
         # Compute e3 scale factors (cell thicknesses)
-        zco_e3 = self._compute_e3(*zco_z3) if self._ln_e3_dep else self._analyt_e3
+        e3t, e3w = self._compute_e3(z3t, z3w) if self._ln_e3_dep else self._analyt_e3
 
-        return self._merge_z3_and_e3(*zco_z3, *zco_e3)
+        return self._merge_z3_and_e3(z3t, z3w, e3t, e3w)
 
     # --------------------------------------------------------------------------
     def _compute_pp(
@@ -211,7 +211,7 @@ class Zco(Zgr):
         sigmas = self._sigmas
         sigmas_p1 = self._compute_sigma(self._z + 1)
 
-        zco_z3 = []
+        both_z3 = []
         for grid, sigma, sigma_p1 in zip(grids, sigmas, sigmas_p1):
 
             if self._is_uniform:
@@ -227,25 +227,21 @@ class Zco(Zgr):
                 a1 = self._ppsur
                 a2 = self._ppa0 * (self._jpk - 1.0)
                 a3 = self._ppa1 * self._ppacr
-
-            # Compute z3
             z3 = self._compute_z3(su, s1, a1, a2, a3)
 
-            # Double tanh
             if self._ldbletanh:
                 # Add double tanh term
                 ss2 = self._stretch_zco(-sigma, self._ldbletanh)
                 a4 = self._ppa2 * self._ppacr2
                 z3 += ss2 * a4
 
-            # Force first w-level to be exactly at zero
             if grid == "W":
+                # Force first w-level to be exactly at zero
                 z3[{"z": 0}] = 0.0
 
-            # Append
-            zco_z3 += [z3]
+            both_z3 += [z3]
 
-        return tuple(zco_z3)
+        return tuple(both_z3)
 
     # --------------------------------------------------------------------------
     @property
@@ -255,33 +251,29 @@ class Zco(Zgr):
         Return e3{t,w} as analytical derivative of depth function z3{t,w}.
         """
 
-        # Return here if is uniform
         if self._is_uniform:
-            # 0d DataArray
+            # Uniform: Return 0d DataArrays
             e3 = DataArray((self._pphmax / (self._jpk - 1.0)))
             return tuple([e3, e3])
 
-        # Stretched zco grid
-        zco_e3 = []
+        both_e3 = []
         for sigma in self._sigmas:
+            # Stretched zco grid
             a0 = self._ppa0
             a1 = self._ppa1
             kk = -sigma * (self._jpk - 1.0) + 1.0
             tanh1 = np.tanh((kk - self._ppkth) / self._ppacr)
-
-            # Compute e3
             e3 = a0 + a1 * tanh1
 
-            # Add double tanh term
             if self._ldbletanh:
+                # Add double tanh term
                 a2 = self._ppa2
                 tanh2 = np.tanh((kk - self._ppkth2) / self._ppacr2)
                 e3 += a2 * tanh2
 
-            # Append
-            zco_e3 += [e3]
+            both_e3 += [e3]
 
-        return tuple(zco_e3)
+        return tuple(both_e3)
 
     def _get_ldbletanh_and_pp2(
         self, ldbletanh: Optional[bool], pp2: Tuple[Optional[float], ...]
@@ -306,16 +298,18 @@ class Zco(Zgr):
             # ldbletanh False and double tanh coefficients specified
             warning_msg = f"{prefix_msg} are ignored when ldbletanh is False"
         else:
+            # All good
             warning_msg = ""
 
         if warning_msg:
+            # Warn and return dummy values
             warnings.warn(warning_msg)
             return (False, (0, 0, 0))
 
-        # Errors: Wrong types
+        # Errors: pp have inconsistent types
         if ldbletanh is True and any(pp_are_none):
             raise ValueError(f"{prefix_msg} MUST be all float when ldbletanh is True")
         if ldbletanh is None and (any(pp_are_none) and not all(pp_are_none)):
-            raise ValueError(f"{prefix_msg} MUST be all None or float")
+            raise ValueError(f"{prefix_msg} MUST be all None or all float")
 
         return (ldbletanh_out, tuple(pp or 0 for pp in pp2))

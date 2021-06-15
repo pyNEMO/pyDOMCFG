@@ -105,7 +105,7 @@ def test_zco_errors():
 
     # Without ldbletanh flag, only allow all pps set or none of them
     with pytest.raises(
-        ValueError, match="ppa2, ppkth2 and ppacr2 MUST be all None or float"
+        ValueError, match="ppa2, ppkth2 and ppacr2 MUST be all None or all float"
     ):
         zco(**kwargs, ppa2=1, ppkth2=1, ppacr2=None)
 
@@ -121,16 +121,16 @@ def test_zco_warnings():
     ds_bathy = Bathymetry(1.0e3, 1.2e3, 1, 1).flat(5.0e3)
     zco = Zco(ds_bathy, jpk=10)
 
-    # Uniform: Ignore coefficients controlling stretching
+    # Uniform: Ignore stretching
     kwargs = dict(ppdzmin=10, pphmax=5.0e3, ppkth=0, ppacr=0)
-    expected = zco(**kwargs, ppsur=None, ppa0=None, ppa1=None)
+    expected = zco(**kwargs, ppsur=None, ppa0=999_999, ppa1=None)
     with pytest.warns(
         UserWarning, match="ppsur, ppa0 and ppa1 are ignored when ppacr == ppkth == 0"
     ):
         actual = zco(**kwargs, ppsur=2, ppa0=2, ppa1=2)
     xr.testing.assert_identical(expected, actual)
 
-    # ldbletanh = False : Ignore parameters controlling double tanh
+    # ldbletanh OFF: Ignore double tanh
     kwargs = dict(ppdzmin=10, pphmax=5.0e3, ldbletanh=False)
     expected = zco(**kwargs, ppa2=None, ppkth2=None, ppacr2=None)
     with pytest.warns(

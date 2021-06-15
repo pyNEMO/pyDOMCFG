@@ -107,13 +107,13 @@ class Zgr:
         (central-difference) of levels' depth (z3{t,w}).
         """
 
-        e3s = []
-        for z3, k in zip((z3t, z3w), (-1, 0)):
+        both_e3 = []
+        for z3, k_to_fill in zip((z3t, z3w), (-1, 0)):
             diff = z3.diff("z")
-            fill = 2.0 * (z3t[{"z": k}] - z3w[{"z": k}])
-            e3s += [xr.concat([diff, fill], "z")]
+            fill = 2.0 * (z3t[{"z": k_to_fill}] - z3w[{"z": k_to_fill}])
+            both_e3 += [xr.concat([diff, fill], "z")]
 
-        return tuple(e3s)
+        return tuple(both_e3)
 
     # --------------------------------------------------------------------------
     def _merge_z3_and_e3(
