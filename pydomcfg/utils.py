@@ -46,7 +46,7 @@ def calc_rmax(depth: DataArray) -> DataArray:
         Bottom depth (units: m).
     Returns
     -------
-    rmax: DataArray
+    DataArray
         Maximum slope parameter (units: None)
     """
 
