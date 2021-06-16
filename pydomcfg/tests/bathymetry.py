@@ -45,7 +45,7 @@ class Bathymetry:
         ds["Bathymetry"] = xr.full_like(ds["glamt"], depth)
         return _add_attributes(_add_mask(ds))
 
-    def sea_mount(self, depth: float, stiff=1.0) -> Dataset:
+    def sea_mount(self, depth: float, stiff: float = 1) -> Dataset:
         """
         Channel with seamount case.
 
@@ -123,7 +123,7 @@ def _add_attributes(ds: Dataset) -> Dataset:
     Dataset
     """
 
-    attrs_dict = {
+    attrs_dict: dict = {
         "Bathymetry": dict(standard_name="sea_floor_depth_below_geoid", units="m"),
         "mask": dict(standard_name="sea_binary_mask", units="1"),
     }
