@@ -37,7 +37,7 @@ class Accessor:
 
     @jpk.setter
     def jpk(self, value: int):
-        if not value:
+        if value <= 0:
             raise ValueError("`jpk` MUST be > 1")
         self._jpk = value
 
