@@ -29,7 +29,7 @@ def _property_and_jpk_check(func: Callable) -> Callable:
 class Accessor:
     def __init__(self, xarray_obj: Dataset):
         self._obj = xarray_obj
-        self._jpk: int = 0
+        self._jpk = 0
 
     @property
     def jpk(self):
