@@ -31,7 +31,7 @@ class Accessor:
         self._jpk = 0
 
     @property
-    def jpk(self):
+    def jpk(self) -> int:
         return self._jpk
 
     @jpk.setter
@@ -41,6 +41,7 @@ class Accessor:
         self._jpk = value
 
     @_jpk_check
-    def zco(self, *args, **kwargs) -> Dataset:
+    def zco(self, *args: Any, **kwargs: Any) -> Dataset:
         return Zco(self._obj, self._jpk)(*args, **kwargs)
+
     zco.__doc__ = Zco.__call__.__doc__

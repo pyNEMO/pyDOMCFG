@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-import pydomcfg  # noqa
+import pydomcfg  # noqa: F401
 
 from .bathymetry import Bathymetry
 from .data import ORCA2_VGRID
