@@ -32,6 +32,9 @@ class Accessor:
 
     @property
     def jpk(self) -> int:
+        """
+        Number of computational levels
+        """
         return self._jpk
 
     @jpk.setter

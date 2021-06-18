@@ -6,7 +6,7 @@ What's New
 Unreleased
 ==========
 
-- Introduced the ``domcfg`` accessor (:pr:`17`)
+- Introduced the ``domcfg`` accessor (:pr:`36`)
 - Added :py:meth:`~pydomcfg.tests.bathymetry.Bathymetry.sea_mount`
   useful to generate classic sea mount test case. (:pr:`17`)
 - Added :py:class:`~pydomcfg.domzgr.zco.Zco`

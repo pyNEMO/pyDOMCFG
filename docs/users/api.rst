@@ -7,6 +7,16 @@ Accessor
 ========
 .. currentmodule:: xarray
 
+Attributes
+----------
+.. autosummary::
+   :toctree: generated/
+   :template: autosummary/accessor_attribute.rst
+
+    Dataset.domcfg.jpk
+
+Methods
+-------
 .. autosummary::
    :toctree: generated/
    :template: autosummary/accessor_method.rst
