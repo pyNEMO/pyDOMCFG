@@ -6,7 +6,8 @@ What's New
 Unreleased
 ==========
 
-- Added :py:func:`~pydomcfg.bathymetry.sea_mount`
+- Introduced the ``domcfg`` accessor (:pr:`17`)
+- Added :py:meth:`~pydomcfg.tests.bathymetry.Bathymetry.sea_mount`
   useful to generate classic sea mount test case. (:pr:`17`)
 - Added :py:class:`~pydomcfg.domzgr.zco.Zco`
   to generate geopotential z-coordinates. (:pr:`15`)
