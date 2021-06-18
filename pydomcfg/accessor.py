@@ -34,6 +34,10 @@ class Accessor:
     def jpk(self) -> int:
         """
         Number of computational levels
+
+        Returns
+        -------
+        int
         """
         return self._jpk
 
