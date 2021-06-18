@@ -1,28 +1,25 @@
-from typing import Callable
+from typing import Any, Callable, TypeVar, cast
 
 import xarray as xr
 from xarray import Dataset
 
 from .domzgr.zco import Zco
 
+F = TypeVar("F", bound=Callable[..., Any])
 
-def _property_and_jpk_check(func: Callable) -> Callable:
-    """
-    1. Transform the function to property
-    2. Raise an error if jpk was not set
-    """
 
-    @property  # type: ignore # TODO: "property" used with a non-method.
-    def wrapper(self):
+def _jpk_check(func: F) -> F:
+    """Decorator to raise an error if jpk was not set"""
+
+    def wrapper(self, *args, **kwargs):
         if not self.jpk:
             raise ValueError(
                 f"Set `jpk` before calling `obj.domcfg.{func.__name__}`."
                 " For example: obj.domcfg.jpk = 31"
             )
+        return func(self, *args, **kwargs)
 
-        return func(self)
-
-    return wrapper
+    return cast(F, wrapper)
 
 
 @xr.register_dataset_accessor("domcfg")
@@ -41,6 +38,6 @@ class Accessor:
             raise ValueError("`jpk` MUST be > 0")
         self._jpk = value
 
-    @_property_and_jpk_check
-    def zco(self) -> Callable:
-        return Zco(self._obj, self._jpk).__call__
+    @_jpk_check
+    def zco(self, *args, **kwargs) -> Dataset:
+        return Zco(self._obj, self._jpk)(*args, **kwargs)
