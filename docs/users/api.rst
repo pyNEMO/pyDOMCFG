@@ -1,12 +1,21 @@
-.. currentmodule:: pydomcfg
-
 API reference
 #############
 
 This page provides an auto-generated summary of pyDOMCFG's API.
 
+Accessor
+========
+.. currentmodule:: xarray
+
+.. autosummary::
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
+
+    Dataset.domcfg.zco
+
 Domzgr
 ======
+.. currentmodule:: pydomcfg
 
 Zco
 ----
@@ -18,6 +27,8 @@ Zco
 
 Utils
 =====
+.. currentmodule:: pydomcfg
+
 .. autosummary::
    :toctree: generated/
 

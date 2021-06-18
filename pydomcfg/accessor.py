@@ -9,7 +9,9 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def _jpk_check(func: F) -> F:
-    """Decorator to raise an error if jpk was not set"""
+    """
+    Decorator to raise an error if jpk was not set
+    """
 
     def wrapper(self, *args, **kwargs):
         if not self.jpk:
@@ -41,3 +43,4 @@ class Accessor:
     @_jpk_check
     def zco(self, *args, **kwargs) -> Dataset:
         return Zco(self._obj, self._jpk)(*args, **kwargs)
+    zco.__doc__ = Zco.__call__.__doc__
