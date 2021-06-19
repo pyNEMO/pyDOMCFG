@@ -7,7 +7,7 @@ Class to generate NEMO v4.0 s-coordinates
 from typing import Optional  # , Tuple
 
 # import numpy as np
-from xarray import Dataset
+from xarray import DataArray, Dataset
 
 from .zgr import Zgr
 
@@ -100,7 +100,7 @@ class Sco(Zgr):
         Returns
         -------
         Dataset
-           Describing the 3D geometry of the model
+            Describing the 3D geometry of the model
         """
 
         self._bot_min = bot_min
@@ -112,17 +112,20 @@ class Sco(Zgr):
 
         # set stretching parameters after checking their consistency
         if self._stretch:
-            self._set_stretch_par(psurf, pbott, alpha, efold, pbot2)
+            self._check_stretch_par(psurf, pbott, alpha, efold, pbot2)
+            self._psurf = psurf or 0.0
+            self._pbott = pbott or 0.0
+            self._alpha = alpha or 0.0
+            self._efold = efold or 0.0
+            self._pbot2 = pbot2 or 0.0
 
-        ds = self._init_ds()
+        # ds = self._init_ds()
 
-        # compute envelope bathymetry
-        ds_env = self._compute_env(ds)
+        # compute envelope bathymetry DataArray
+        self._envlp = self._compute_env(self._bathy["Bathymetry"])
 
         # compute sigma-coordinates for z3 computation
-        kindx = ds_env["z"]
-        sigma = (self._compute_sigma(kk) for kk in kindx)
-        self._sigT, self._sigW = sigma
+        self._sigmas = self._compute_sigma(self._z)
 
         # compute z3 depths of zco vertical levels
         # dsz = self._sco_z3(ds_env)
@@ -130,13 +133,13 @@ class Sco(Zgr):
         # compute e3 scale factors
         # dse = self._compute_e3(dsz) if self._ln_e3_dep else self._analyt_e3(dsz)
 
-        # return dse
+        # addind this only to not make darglint complying
+        return self._merge_z3_and_e3(self._envlp, self._envlp, self._envlp, self._envlp)
 
     # --------------------------------------------------------------------------
-    def _set_stretch_par(self, psurf, pbott, alpha, efold, pbot2):
+    def _check_stretch_par(self, psurf, pbott, alpha, efold, pbot2):
         """
-        Set stretching parameters after checking
-        consistency of input parameters
+        Check consistency of stretching parameters
         """
         if not (psurf and pbott):
             if self._stretch == "sh94":
@@ -148,31 +151,19 @@ class Sco(Zgr):
             elif self._stretch == "sf12":
                 srf = "rn_zs"
                 bot = "rn_zb_a"
-            msg = (
-                srf
-                + " and "
-                + bot
-                + "MUST be set when using "
-                + self._stretch
-                + " stretching."
+            raise ValueError(
+                f"{srf} and {bot} MUST be set when using {self._stretch} stretching."
             )
-            raise ValueError(msg)
 
         if self._stretch == "sf12":
             if not (alpha and efold and pbot2):
-                msg = "rn_alpha, rn_efold and rn_zb_b MUST be set when \
-                       using sf12 stretching."
-                raise ValueError(msg)
-
-        # setting stretching parameters
-        self._psurf = psurf if psurf else 0.0
-        self._pbott = pbott if pbott else 0.0
-        self._alpha = alpha if alpha else 0.0
-        self._efold = efold if efold else 0.0
-        self._pbot2 = pbot2 if pbot2 else 0.0
+                raise ValueError(
+                    "rn_alpha, rn_efold and rn_zb_b MUST be set when using \
+                     sf12 stretching."
+                )
 
     # --------------------------------------------------------------------------
-    def _compute_env(self, ds: Dataset) -> Dataset:
+    def _compute_env(self, da: DataArray) -> DataArray:
         """
         Compute the envelope bathymetry surface by applying the
         Martinho & Batteen (2006) smoothing algorithm to the
@@ -188,12 +179,12 @@ class Sco(Zgr):
 
         Parameters
         ----------
-        ds: Dataset
-            xarray dataset with the 2D bottom topography DataArray
+        da: DataArray
+            xarray DataArray of the 2D bottom topography
         Returns
         -------
-        ds: Dataset
-            xarray dataset with the 2D envelope bathymetry DataArray
+        DataArray
+            xarray DataArray of the 2D envelope bathymetry
         """
 
-        return ds
+        return da

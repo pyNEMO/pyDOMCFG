@@ -10,6 +10,7 @@ from xarray import DataArray, Dataset
 
 NEMO_NONE = 999_999
 
+
 def _is_nemo_none(var: Hashable) -> bool:
     """Assess if a NEMO parameter is None"""
     return (var or NEMO_NONE) == NEMO_NONE
@@ -22,29 +23,34 @@ def _are_nemo_none(var: Iterable) -> Iterator[bool]:
 
 
 # -----------------------------------------------------------------------------
-def calc_rmax(depth: DataArray) -> DataArray:
+def _calc_rmax(depth: DataArray) -> float:
     """
     Calculate rmax: measure of steepness
     This function returns the maximum slope paramater
 
-       rmax = abs(Hb - Ha) / (Ha + Hb)
+    rmax = abs(Hb - Ha) / (Ha + Hb)
 
     where Ha and Hb are the depths of adjacent grid cells (Mellor et al 1998).
 
     Reference:
-      *) Mellor, Oey & Ezer, J Atm. Oce. Tech. 15(5):1122-1131, 1998.
+    *) Mellor, Oey & Ezer, J Atm. Oce. Tech. 15(5):1122-1131, 1998.
 
     Parameters
     ----------
     depth: DataArray
         Bottom depth (units: m).
+
     Returns
     -------
-    DataArray
+    float
         Maximum slope parameter (units: None)
     """
 
-    depth = depth.reset_index(list(depth.dims))
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # Do we actually need this? mypy complains since
+    # DataArray.reset_indexe() returns Optional["DataArray"]
+    #
+    # depth = depth.reset_index(list(depth.dims))
 
     both_rmax = []
     for dim in depth.dims:
