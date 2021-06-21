@@ -2,6 +2,7 @@
 Utilities
 """
 
+# from itertools import product
 from typing import Hashable, Iterable, Iterator, Optional
 
 import numpy as np
@@ -23,34 +24,30 @@ def _are_nemo_none(var: Iterable) -> Iterator[bool]:
 
 
 # -----------------------------------------------------------------------------
-def _calc_rmax(depth: DataArray) -> float:
+def _calc_rmax(depth: DataArray) -> DataArray:
     """
-    Calculate rmax: measure of steepness
-    This function returns the maximum slope paramater
+     Calculate rmax: measure of steepness
+     This function returns the maximum slope paramater
 
-    rmax = abs(Hb - Ha) / (Ha + Hb)
+     rmax = abs(Hb - Ha) / (Ha + Hb)
 
-    where Ha and Hb are the depths of adjacent grid cells (Mellor et al 1998).
+     where Ha and Hb are the depths of adjacent grid cells (Mellor et al 1998).
 
-    Reference:
-    *) Mellor, Oey & Ezer, J Atm. Oce. Tech. 15(5):1122-1131, 1998.
+     Reference:
+     *) Mellor, Oey & Ezer, J Atm. Oce. Tech. 15(5):1122-1131, 1998.
 
-    Parameters
-    ----------
-    depth: DataArray
-        Bottom depth (units: m).
+     Parameters
+     ----------
+     depth: DataArray
+         Bottom depth (units: m).
 
-    Returns
-    -------
-    float
-        Maximum slope parameter (units: None)
+     Returns
+     -------
+    DataArray
+         2D maximum slope parameter (units: None)
     """
 
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # Do we actually need this? mypy complains since
-    # DataArray.reset_indexe() returns Optional["DataArray"]
-    #
-    # depth = depth.reset_index(list(depth.dims))
+    depth = DataArray(depth.reset_index(list(depth.dims)))
 
     both_rmax = []
     for dim in depth.dims:
@@ -59,6 +56,8 @@ def _calc_rmax(depth: DataArray) -> float:
         depth_diff = depth.diff(dim)
         depth_rolling_sum = depth.rolling({dim: 2}).sum().dropna(dim)
         rmax = depth_diff / depth_rolling_sum
+        # dealing with nans at land points
+        rmax = rmax.where(np.isfinite(rmax), 0)
 
         # (rmax_a + rmax_b) / 2
         rmax = rmax.rolling({dim: 2}).mean().dropna(dim)
@@ -69,6 +68,109 @@ def _calc_rmax(depth: DataArray) -> float:
         both_rmax.append(np.abs(rmax))
 
     return np.maximum(*both_rmax)
+
+
+# -----------------------------------------------------------------------------
+def _smooth_MB06(depth: DataArray, rmax: float) -> DataArray:
+    """
+    This is NEMO implementation of the direct iterative method
+    of Martinho and Batteen (2006).
+
+    The algorithm ensures that
+
+                H_ij - H_n
+                ---------- < rmax
+                H_ij + H_n
+
+    where H_ij is the depth at some point (i,j) and H_n is the
+    neighbouring depth in the east, west, south or north direction.
+
+    Reference:
+    *) Martinho & Batteen, Oce. Mod. 13(2):166-175, 2006.
+
+    Parameters
+    ----------
+    depth: DataArray
+        Bottom depth (units: m).
+    rmax: float
+        Maximum slope parameter allowed
+
+    Returns
+    -------
+    DataArray
+        Smooth version of the bottom topography with
+        a maximum slope parameter < rmax (units: m).
+
+    """
+
+    # set scaling factor used for smoothing
+    zrfact = (1.0 - rmax) / (1.0 + rmax)
+
+    # getting the actual numpy array
+    # TO BE OPTIMISED
+    da_zenv = depth.copy()
+    zenv = da_zenv.data
+    nj = zenv.shape[0]
+    ni = zenv.shape[1]
+
+    # initialise temporary evelope depth arrays
+    ztmpi1 = zenv.copy()
+    ztmpi2 = zenv.copy()
+    ztmpj1 = zenv.copy()
+    ztmpj2 = zenv.copy()
+
+    # Computing the initial maximum slope parameter
+    zrmax = np.nanmax(_calc_rmax(depth))
+    zri = np.ones(zenv.shape) * zrmax
+    zrj = np.ones(zenv.shape) * zrmax
+
+    tol = 1.0e-8
+    itr = 0
+    max_itr = 10000
+
+    while itr <= max_itr and (zrmax - rmax) > tol:
+
+        itr += 1
+        zrmax = 0.0
+        # we set zrmax from previous r-values (zri and zrj) first
+        # if set after current r-value calculation (as previously)
+        # we could exit DO WHILE prematurely before checking r-value
+        # of current zenv
+        max_zri = np.nanmax(np.absolute(zri))
+        max_zrj = np.nanmax(np.absolute(zrj))
+        zrmax = np.nanmax([zrmax, max_zrj, max_zri])
+
+        print("Iter:", itr, "rmax: ", zrmax)
+
+        zri *= 0.0
+        zrj *= 0.0
+        for j in range(nj - 1):
+            for i in range(ni - 1):
+                ip1 = np.minimum(i + 1, ni)
+                jp1 = np.minimum(j + 1, nj)
+                if zenv[j, i] > 0.0 and zenv[j, ip1] > 0.0:
+                    zri[j, i] = (zenv[j, ip1] - zenv[j, i]) / (
+                        zenv[j, ip1] + zenv[j, i]
+                    )
+                if zenv[j, i] > 0.0 and zenv[jp1, i] > 0.0:
+                    zrj[j, i] = (zenv[jp1, i] - zenv[j, i]) / (
+                        zenv[jp1, i] + zenv[j, i]
+                    )
+                if zri[j, i] > rmax:
+                    ztmpi1[j, i] = zenv[j, ip1] * zrfact
+                if zri[j, i] < -rmax:
+                    ztmpi2[j, ip1] = zenv[j, i] * zrfact
+                if zrj[j, i] > rmax:
+                    ztmpj1[j, i] = zenv[jp1, i] * zrfact
+                if zrj[j, i] < -rmax:
+                    ztmpj2[jp1, i] = zenv[j, i] * zrfact
+
+        ztmpi = np.maximum(ztmpi1, ztmpi2)
+        ztmpj = np.maximum(ztmpj1, ztmpj2)
+        zenv = np.maximum(zenv, np.maximum(ztmpi, ztmpj))
+
+    da_zenv.data = zenv
+    return da_zenv
 
 
 # -----------------------------------------------------------------------------

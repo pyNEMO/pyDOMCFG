@@ -6,12 +6,12 @@ Class to generate NEMO v4.0 s-coordinates
 
 from typing import Optional  # , Tuple
 
-# import numpy as np
+import numpy as np
 from xarray import DataArray, Dataset
 
-from .zgr import Zgr
+from pydomcfg.utils import _smooth_MB06  # , _calc_rmax
 
-# from pydomcfg.utils import is_nemo_none
+from .zgr import Zgr
 
 
 class Sco(Zgr):
@@ -45,8 +45,8 @@ class Sco(Zgr):
     # --------------------------------------------------------------------------
     def __call__(
         self,
-        bot_min: float,
-        bot_max: float,
+        min_dep: float,
+        max_dep: float,
         hc: float = 0.0,
         rmax: Optional[float] = None,
         stretch: Optional[str] = None,
@@ -62,9 +62,9 @@ class Sco(Zgr):
 
         Parameters
         ----------
-        bot_min: float
+        min_dep: float
             Minimum depth of bottom topography surface (>0) (m)
-        bot_max: float
+        max_dep: float
             Maximum depth of bottom topography surface (>0) (m)
         hc: float
             critical depth for transition from uniform sigma
@@ -103,10 +103,10 @@ class Sco(Zgr):
             Describing the 3D geometry of the model
         """
 
-        self._bot_min = bot_min
-        self._bot_max = bot_max
+        self._min_dep = min_dep
+        self._max_dep = max_dep
         self._hc = hc
-        self.rmax = rmax
+        self._rmax = rmax
         self._stretch = stretch
         self._ln_e3_dep = ln_e3_dep
 
@@ -119,10 +119,20 @@ class Sco(Zgr):
             self._efold = efold or 0.0
             self._pbot2 = pbot2 or 0.0
 
-        # ds = self._init_ds()
+        bathy = self._bathy["Bathymetry"]
+
+        # Land-Sea mask of the domain:
+        # 0 = land
+        # 1 = ocean
+        self._ocean = bathy.where(bathy == 0, 1)
+
+        # set maximum and minumum depths of model bathymetry
+        bathy = bathy.where(bathy < self._max_dep, self._max_dep)
+        bathy = bathy.where(bathy > self._min_dep, self._min_dep)
+        bathy *= self._ocean
 
         # compute envelope bathymetry DataArray
-        self._envlp = self._compute_env(self._bathy["Bathymetry"])
+        self._envlp = self._compute_env(bathy)
 
         # compute sigma-coordinates for z3 computation
         self._sigmas = self._compute_sigma(self._z)
@@ -134,7 +144,9 @@ class Sco(Zgr):
         # dse = self._compute_e3(dsz) if self._ln_e3_dep else self._analyt_e3(dsz)
 
         # addind this only to not make darglint complying
-        return self._merge_z3_and_e3(self._envlp, self._envlp, self._envlp, self._envlp)
+        ds = self._bathy.copy()
+        ds["hbatt"] = self._envlp
+        return ds
 
     # --------------------------------------------------------------------------
     def _check_stretch_par(self, psurf, pbott, alpha, efold, pbot2):
@@ -163,7 +175,7 @@ class Sco(Zgr):
                 )
 
     # --------------------------------------------------------------------------
-    def _compute_env(self, da: DataArray) -> DataArray:
+    def _compute_env(self, depth: DataArray) -> DataArray:
         """
         Compute the envelope bathymetry surface by applying the
         Martinho & Batteen (2006) smoothing algorithm to the
@@ -179,7 +191,7 @@ class Sco(Zgr):
 
         Parameters
         ----------
-        da: DataArray
+        depth: DataArray
             xarray DataArray of the 2D bottom topography
         Returns
         -------
@@ -187,4 +199,40 @@ class Sco(Zgr):
             xarray DataArray of the 2D envelope bathymetry
         """
 
-        return da
+        da_zenv = depth.copy()
+
+        if self._rmax:
+
+            # getting the actual numpy array
+            # TO BE OPTIMISED
+            zenv = da_zenv.data
+            nj = zenv.shape[0]
+            ni = zenv.shape[1]
+
+            # set first land point adjacent to a wet cell to
+            # min_dep as this needs to be included in smoothing
+            for j in range(nj - 1):
+                for i in range(ni - 1):
+                    if not self._ocean[j, i]:
+                        ip1 = np.minimum(i + 1, ni)
+                        jp1 = np.minimum(j + 1, nj)
+                        im1 = np.maximum(i - 1, 0)
+                        jm1 = np.maximum(j - 1, 0)
+                        if (
+                            depth[jp1, im1]
+                            + depth[jp1, i]
+                            + depth[jp1, ip1]
+                            + depth[j, im1]
+                            + depth[j, ip1]
+                            + depth[jm1, im1]
+                            + depth[jm1, i]
+                            + depth[jm1, ip1]
+                        ) > 0.0:
+                            zenv[j, i] = self._min_dep
+
+            da_zenv.data = zenv
+            # print(np.nanmax(_calc_rmax(da_zenv)*self._ocean))
+            da_zenv = _smooth_MB06(da_zenv, self._rmax)
+            da_zenv = da_zenv.where(da_zenv > self._min_dep, self._min_dep)
+
+        return da_zenv
