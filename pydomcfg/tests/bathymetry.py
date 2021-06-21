@@ -147,28 +147,30 @@ def _calc_rmax(depth):
     Parameters
     ----------
     depth: float
-            Bottom depth (units: m).
+        Bottom depth (units: m).
 
     Returns
     -------
     rmax: float
-            Slope steepness value (units: None)
+        Slope steepness value (units: None)
     """
-    depth = depth.reset_index(list(depth.dims))
 
     both_rmax = []
     for dim in depth.dims:
 
-        # (H[0] - H[1]) / (H[0] + H[1])
-        depth_diff = depth.diff(dim)
-        depth_rolling_sum = depth.rolling({dim: 2}).sum().dropna(dim)
-        rmax = depth_diff / depth_rolling_sum
+        rolled = depth.rolling({dim: 2}).construct("tmp_dim")
 
-        # (R[0] + R[1]) / 2
-        rmax = rmax.rolling({dim: 2}).mean().dropna(dim)
+        # |(H[0] - H[1])| / (H[0] + H[1])
+        # First value is NaN
+        diff = rolled.diff("tmp_dim").squeeze("tmp_dim")
+        rmax = diff / rolled.sum("tmp_dim")
 
-        # Fill first row and column
-        rmax = rmax.pad({dim: (1, 1)}, constant_values=0)
+        # (rmax[0] + rmax[1]) / 2
+        # First two values are NaN
+        rmax = rmax.rolling({dim: 2}).mean()
+
+        # First and last values are zero
+        rmax = rmax.shift({dim: -1}).fillna(0)
 
         both_rmax.append(np.abs(rmax))
 
