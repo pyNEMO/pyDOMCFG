@@ -163,7 +163,7 @@ def _calc_rmax(depth):
         # |(H[0] - H[1])| / (H[0] + H[1])
         # First value is NaN
         diff = rolled.diff("tmp_dim").squeeze("tmp_dim")
-        rmax = diff / rolled.sum("tmp_dim")
+        rmax = np.abs(diff) / rolled.sum("tmp_dim")
 
         # (rmax[0] + rmax[1]) / 2
         # First two values are NaN
@@ -172,6 +172,6 @@ def _calc_rmax(depth):
         # First and last values are zero
         rmax = rmax.shift({dim: -1}).fillna(0)
 
-        both_rmax.append(np.abs(rmax))
+        both_rmax.append(rmax)
 
     return np.maximum(*both_rmax)
