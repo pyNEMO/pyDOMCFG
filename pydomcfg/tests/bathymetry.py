@@ -155,6 +155,9 @@ def _calc_rmax(depth):
         Slope steepness value (units: None)
     """
 
+    # Replace land with zeros
+    depth = depth.where(depth > 0, 0)
+    
     both_rmax = []
     for dim in depth.dims:
 
@@ -167,7 +170,7 @@ def _calc_rmax(depth):
 
         # (rmax[0] + rmax[1]) / 2
         # First two values are NaN
-        rmax = rmax.rolling({dim: 2}).mean()
+        rmax = rmax.rolling({dim: 2}).mean(skipna=True)
 
         # First and last values are zero
         rmax = rmax.shift({dim: -1}).fillna(0)
