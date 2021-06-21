@@ -157,7 +157,7 @@ def _calc_rmax(depth):
 
     # Replace land with zeros
     depth = depth.where(depth > 0, 0)
-    
+
     both_rmax = []
     for dim in depth.dims:
 
