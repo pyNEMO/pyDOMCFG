@@ -155,25 +155,24 @@ def _calc_rmax(depth):
         Slope steepness value (units: None)
     """
 
-    # Replace land with zeros
-    depth = depth.where(depth > 0, 0)
-
     both_rmax = []
     for dim in depth.dims:
 
-        rolled = depth.rolling({dim: 2}).construct("tmp_dim")
-
-        # |(H[0] - H[1])| / (H[0] + H[1])
-        # First value is NaN
-        diff = rolled.diff("tmp_dim").squeeze("tmp_dim")
-        rmax = np.abs(diff) / rolled.sum("tmp_dim")
+        # |H[0] - H[1]| / (H[0] + H[1])
+        rolled = depth.rolling({dim: 2}).construct("window_dim")
+        diff = rolled.diff("window_dim").squeeze("window_dim")
+        rmax = np.abs(diff) / rolled.sum("window_dim")
 
         # (rmax[0] + rmax[1]) / 2
-        # First two values are NaN
-        rmax = rmax.rolling({dim: 2}).mean(skipna=True)
+        rolled = rmax.rolling({dim: 2}).construct("window_dim")
+        rmax = rolled.mean("window_dim", skipna=True)
 
-        # First and last values are zero
-        rmax = rmax.shift({dim: -1}).fillna(0)
+        # 1. Place on the correct index (shift -1 as we rolled twice)
+        # 2. Force first/last values = 0
+        # 3. Replace land values with 0
+        rmax = rmax.shift({dim: -1})
+        rmax[{dim: [0, -1]}] = 0
+        rmax = rmax.fillna(0)
 
         both_rmax.append(rmax)
 
