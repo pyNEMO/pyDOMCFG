@@ -16,7 +16,7 @@ def test_jpk():
         ds_bathy.domcfg.zco()
 
     # jpk must be > 0
-    with pytest.raises(ValueError, match="`jpk` MUST be > 0"):
+    with pytest.raises(ValueError, match="`jpk` MUST be >= 0"):
         ds_bathy.domcfg.jpk = -1
 
     # Has been set correctly.
