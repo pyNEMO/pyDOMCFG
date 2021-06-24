@@ -101,7 +101,7 @@ class Accessor:
         # from the namelists.
         parameters = inspect.signature(zgr_class.__call__).parameters
         kwargs = {key: nml[key] for key in parameters if key != "self"}
-        return Zco(self._obj, nml["jpkdta"])(**kwargs)
+        return zgr_class(self._obj, nml["jpkdta"])(**kwargs)
 
     def _namelist_parser(
         self, nml_cfg_path_or_io: Union[str, Path, IO[str]]
