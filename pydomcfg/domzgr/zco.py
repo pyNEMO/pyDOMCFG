@@ -284,7 +284,7 @@ class Zco(Zgr):
         Return pp2=(0, 0, 0) when double tanh is switched off.
         """
 
-        pp_are_none = tuple(pp is None for pp in pp2)
+        pp_are_none = tuple(_are_nemo_none(pp2))
         prefix_msg = "ppa2, ppkth2 and ppacr2"
         ldbletanh_out = ldbletanh if (ldbletanh is not None) else not any(pp_are_none)
 

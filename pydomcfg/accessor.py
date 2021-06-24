@@ -132,14 +132,7 @@ class Accessor:
         nml_cfg = f90nml.read(nml_cfg_path_or_io)
         nml = f90nml.patch(self.nml_ref_path, nml_cfg)
 
-        # Chain all nam blocks
-        # TODO:
-        #   Using ChainMap we disregard nam blocks, so assume there aren't
-        #   variables with the same name in different nam blocks. Is it OK?
-        #   If NO, maybe it's OK if we just select relevant blocks?
-        #   ChainMap would make life much easier...
-        #   We just look at the zgr call signatures, and we extract the variables
-        #   with the same name from any block.
+        # Chain all namblocks
         chained = ChainMap(*nml.todict().values())
 
         mutually_exclusive = ("ln_zco", "ln_zps", "ln_sco")

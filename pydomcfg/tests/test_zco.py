@@ -2,6 +2,9 @@
 Tests for zco
 """
 
+import urllib.request
+from io import StringIO
+
 import numpy as np
 import pytest
 import xarray as xr
@@ -9,10 +12,11 @@ import xarray as xr
 import pydomcfg  # noqa: F401
 
 from .bathymetry import Bathymetry
-from .data import ORCA2_VGRID
+from .data import ORCA2_NAMELIST, ORCA2_VGRID
 
 
-def test_zco_orca2():
+@pytest.mark.parametrize("from_namelist", (True, False))
+def test_zco_orca2(from_namelist):
     """
     The test consists in reproducing ORCA2 grid
     z3T/W and e3T/W as computed by NEMO v3.6
@@ -24,22 +28,39 @@ def test_zco_orca2():
     # Bathymetry dataset
     ds_bathy = Bathymetry(1.0e3, 1.2e3, 1, 1).flat(5.0e3)
 
-    # Set number of vertical levels
-    ds_bathy.domcfg.jpk = 31
+    if from_namelist:
+        pytest.importorskip("f90nml")
 
-    # zco mesh with analytical e3 using ORCA2 input parameters
-    # See pag 62 of v3.6 manual for the input parameters
-    dsz_an = ds_bathy.domcfg.zco(
-        ppdzmin=10.0,
-        pphmax=5000.0,
-        ppkth=21.43336197938,
-        ppacr=3,
-        ppsur=-4762.96143546300,
-        ppa0=255.58049070440,
-        ppa1=245.58132232490,
-        ldbletanh=False,
-        ln_e3_dep=False,
-    )
+        # Retrieve reference namelist from NEMO v4.0.4 utils
+        nml_ref_url = (
+            "https://forge.ipsl.jussieu.fr/nemo/svn/utils/"
+            "tools_r4.0-HEAD/DOMAINcfg/namelist_ref?p=12672"
+        )
+        nml_ref_path, _ = urllib.request.urlretrieve(nml_ref_url)
+
+        # Set reference namelist
+        ds_bathy.domcfg.nml_ref_path = nml_ref_path
+
+        # Infer parameters from namelist
+        dsz_an = ds_bathy.domcfg.from_namelist(StringIO(ORCA2_NAMELIST))
+
+    else:
+        # Set number of vertical levels
+        ds_bathy.domcfg.jpk = 31
+
+        # zco mesh with analytical e3 using ORCA2 input parameters
+        # See pag 62 of v3.6 manual for the input parameters
+        dsz_an = ds_bathy.domcfg.zco(
+            ppdzmin=10.0,
+            pphmax=5000.0,
+            ppkth=21.43336197938,
+            ppacr=3,
+            ppsur=-4762.96143546300,
+            ppa0=255.58049070440,
+            ppa1=245.58132232490,
+            ldbletanh=False,
+            ln_e3_dep=False,
+        )
 
     # reference ocean.output values are
     # given with 4 digits precision
