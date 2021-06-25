@@ -142,7 +142,7 @@ def _calc_rmax(depth):
     Calculate rmax: measure of steepness
 
     This function returns the slope steepness criteria rmax, which is simply
-    (H[0] - H[1]) / (H[0] + H[1])
+    |H[0] - H[1]| / (H[0] + H[1])
 
     Parameters
     ----------
@@ -153,27 +153,31 @@ def _calc_rmax(depth):
     -------
     rmax: float
         Slope steepness value (units: None)
+
+    Notes
+    -----
+    This function uses a "conservative approach" and rmax is overestimated.
+    rmax at T points is the maximum rmax estimated at any adjacent U/V point.
     """
 
+    # Loop over x and y
     both_rmax = []
     for dim in depth.dims:
 
-        # |H[0] - H[1]| / (H[0] + H[1])
+        # Compute rmax
         rolled = depth.rolling({dim: 2}).construct("window_dim")
         diff = rolled.diff("window_dim").squeeze("window_dim")
         rmax = np.abs(diff) / rolled.sum("window_dim")
 
-        # (rmax[0] + rmax[1]) / 2
-        rolled = rmax.rolling({dim: 2}).construct("window_dim")
-        rmax = rolled.mean("window_dim", skipna=True)
-
-        # 1. Place on the correct index (shift -1 as we rolled twice)
-        # 2. Force first/last values = 0
-        # 3. Replace land values with 0
+        # Construct dimension with velocity points adjacent to any T point
+        # We need to shift as we rolled twice and to force boundaries = NaN
+        rmax = rmax.rolling({dim: 2}).construct("vel_points")
         rmax = rmax.shift({dim: -1})
-        rmax[{dim: [0, -1]}] = 0
-        rmax = rmax.fillna(0)
+        rmax[{dim: [0, -1]}] = None
 
         both_rmax.append(rmax)
 
-    return np.maximum(*both_rmax)
+    rmax = xr.concat(both_rmax, "vel_points")
+    rmax = rmax.max("vel_points", skipna=True)
+
+    return rmax.fillna(0)
