@@ -26,25 +26,25 @@ def _are_nemo_none(var: Iterable) -> Iterator[bool]:
 # -----------------------------------------------------------------------------
 def _calc_rmax(depth: DataArray) -> DataArray:
     """
-     Calculate rmax: measure of steepness
-     This function returns the maximum slope paramater
+    Calculate rmax: measure of steepness
+    This function returns the maximum slope paramater
 
-     rmax = abs(Hb - Ha) / (Ha + Hb)
+    rmax = abs(Hb - Ha) / (Ha + Hb)
 
-     where Ha and Hb are the depths of adjacent grid cells (Mellor et al 1998).
+    where Ha and Hb are the depths of adjacent grid cells (Mellor et al 1998).
 
-     Reference:
-     *) Mellor, Oey & Ezer, J Atm. Oce. Tech. 15(5):1122-1131, 1998.
+    Reference:
+    *) Mellor, Oey & Ezer, J Atm. Oce. Tech. 15(5):1122-1131, 1998.
 
-     Parameters
-     ----------
-     depth: DataArray
-         Bottom depth (units: m).
+    Parameters
+    ----------
+    depth: DataArray
+        Bottom depth (units: m).
 
-     Returns
-     -------
+    Returns
+    -------
     DataArray
-         2D maximum slope parameter (units: None)
+        2D maximum slope parameter (units: None)
     """
 
     depth = DataArray(depth.reset_index(list(depth.dims)))
