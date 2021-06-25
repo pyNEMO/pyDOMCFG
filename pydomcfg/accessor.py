@@ -98,10 +98,22 @@ class Accessor:
             raise NotImplementedError("Only `Zco` has been implemented so far.")
 
         # Inspect the __call__ signatures and get the approriate variables
-        # from the namelists.
+        # from the namelists. Replace 999999. with None
         parameters = inspect.signature(zgr_class.__call__).parameters
-        kwargs = {key: nml[key] for key in parameters if key != "self"}
-        return zgr_class(self._obj, nml["jpkdta"])(**kwargs)
+        kwargs = {
+            key: None if nml[key] == 999_999 else nml[key]
+            for key in parameters
+            if key != "self"
+        }
+
+        # TODO:
+        #   mypy fails here because we convert all 999999 to None,
+        #   even if the argument is not Optional.
+        #   I think we can just switch off the check: The code will eventually fail
+        #   at runtime, but that's because 999999 was used in a wrong place.
+        #   It's the same as running the python version using None with the
+        #   wrong argument.
+        return zgr_class(self._obj, nml["jpkdta"])(**kwargs)  # type: ignore
 
     def _namelist_parser(
         self, nml_cfg_path_or_io: Union[str, Path, IO[str]]

@@ -45,6 +45,10 @@ ORCA2_VGRID = np.array(
 )
 
 # See pag 62 of v3.6 manual for the input parameters
+# TODO:
+#    ppdzmin and pphmax in NEMO DOMAINcfg README are actually 999999,
+#    a dummy value is assigned but it's a temporary workaround.
+#    See: https://github.com/pyNEMO/pyDOMCFG/issues/44
 ORCA2_NAMELIST = """
 !-----------------------------------------------------------------------
 &namcfg        !   parameters of the configuration
@@ -83,8 +87,8 @@ ORCA2_NAMELIST = """
    ppa1        =     245.58132232490   !
    ppkth       =      21.43336197938   !
    ppacr       =       3.0             !
-   ppdzmin     =  999999.0             !  Minimum vertical spacing
-   pphmax      =  999999.0             !  Maximum depth
+   ppdzmin     =      10.0             !  Minimum vertical spacing
+   pphmax      =    5000.0             !  Maximum depth
    ldbletanh   =  .FALSE.              !  Use/do not use double tanf function for vertical coordinates
    ppa2        =  999999.0             !  Double tanh function parameters
    ppkth2      =  999999.0             !

@@ -2,24 +2,11 @@
 Utilities
 """
 
-from typing import Hashable, Iterable, Iterator, Optional
+from typing import Optional
 
 import numpy as np
 import xarray as xr
 from xarray import DataArray, Dataset
-
-NEMO_NONE = 999_999
-
-
-def _is_nemo_none(var: Hashable) -> bool:
-    """Assess if a NEMO parameter is None"""
-    return (var or NEMO_NONE) == NEMO_NONE
-
-
-def _are_nemo_none(var: Iterable) -> Iterator[bool]:
-    """Iterate over namelist parameters and assess if they are None"""
-    for v in var:
-        yield _is_nemo_none(v)
 
 
 def generate_cartesian_grid(

@@ -8,8 +8,6 @@ from typing import Optional, Tuple
 import numpy as np
 from xarray import DataArray, Dataset
 
-from pydomcfg.utils import _are_nemo_none, _is_nemo_none
-
 from .zgr import Zgr
 
 
@@ -147,7 +145,7 @@ class Zco(Zgr):
 
         # Uniform grid, return dummy zeros
         if self._is_uniform:
-            if not all(_are_nemo_none((ppsur, ppa0, ppa1))):
+            if not all(pp is None for pp in (ppsur, ppa0, ppa1)):
                 warnings.warn(
                     "Uniform grid case (no stretching):"
                     " ppsur, ppa0 and ppa1 are ignored when ppacr == ppkth == 0"
@@ -163,10 +161,10 @@ class Zco(Zgr):
         ee = np.log(np.cosh((1.0 - self._ppkth) / self._ppacr))
 
         # Substitute only if is None or 999999
-        ppa1_out = (aa / (bb - cc * (dd - ee))) if _is_nemo_none(ppa1) else ppa1
-        ppa0_out = (self._ppdzmin - ppa1_out * bb) if _is_nemo_none(ppa0) else ppa0
+        ppa1_out = (aa / (bb - cc * (dd - ee))) if ppa1 is None else ppa1
+        ppa0_out = (self._ppdzmin - ppa1_out * bb) if ppa0 is None else ppa0
         ppsur_out = (
-            -(ppa0_out + ppa1_out * self._ppacr * ee) if _is_nemo_none(ppsur) else ppsur
+            -(ppa0_out + ppa1_out * self._ppacr * ee) if ppsur is None else ppsur
         )
 
         return (ppsur_out, ppa0_out, ppa1_out)
@@ -284,7 +282,7 @@ class Zco(Zgr):
         Return pp2=(0, 0, 0) when double tanh is switched off.
         """
 
-        pp_are_none = tuple(_are_nemo_none(pp2))
+        pp_are_none = tuple(pp is None for pp in pp2)
         prefix_msg = "ppa2, ppkth2 and ppacr2"
         ldbletanh_out = ldbletanh if (ldbletanh is not None) else not any(pp_are_none)
 

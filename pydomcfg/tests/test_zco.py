@@ -2,8 +2,8 @@
 Tests for zco
 """
 
-import urllib.request
 from io import StringIO
+from urllib.request import urlretrieve
 
 import numpy as np
 import pytest
@@ -36,7 +36,7 @@ def test_zco_orca2(from_namelist):
             "https://forge.ipsl.jussieu.fr/nemo/svn/utils/"
             "tools_r4.0-HEAD/DOMAINcfg/namelist_ref?p=12672"
         )
-        nml_ref_path, _ = urllib.request.urlretrieve(nml_ref_url)
+        nml_ref_path, _ = urlretrieve(nml_ref_url)
 
         # Set reference namelist
         ds_bathy.domcfg.nml_ref_path = nml_ref_path
@@ -144,7 +144,7 @@ def test_zco_warnings():
 
     # Uniform: Ignore stretching
     kwargs = dict(ppdzmin=10, pphmax=5.0e3, ppkth=0, ppacr=0)
-    expected = ds_bathy.domcfg.zco(**kwargs, ppsur=None, ppa0=999_999, ppa1=None)
+    expected = ds_bathy.domcfg.zco(**kwargs, ppsur=None, ppa0=None, ppa1=None)
     with pytest.warns(
         UserWarning, match="ppsur, ppa0 and ppa1 are ignored when ppacr == ppkth == 0"
     ):
