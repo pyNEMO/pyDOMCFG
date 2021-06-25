@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-import numpy as np
 import netCDF4 as nc4
-from xarray import Dataset, DataArray 
+import numpy as np
+from xarray import DataArray, Dataset
 
-#=======================================================================================
+
+# =======================================================================================
 def calc_rmax_np(depth):
     """
     Calculate rmax: measure of steepness
-    
+
     This function returns the slope steepness criteria rmax, which is simply
     (H[0] - H[1]) / (H[0] + H[1])
     Parameters
@@ -19,21 +20,22 @@ def calc_rmax_np(depth):
     -------
     rmax: float
             Slope steepness value (units: None)
-    """   
+    """
     rmax_x, rmax_y = np.zeros_like(depth), np.zeros_like(depth)
 
-    rmax_x[:,1:-1] = 0.5 * ( np.diff(depth[:,  :-1], axis=1) / 
-                               (depth[:,  :-2] + depth[:, 1:-1]) +
-                             np.diff(depth[:, 1:  ], axis=1) / 
-                               (depth[:, 1:-1] + depth[:, 2:  ]) )
-    rmax_y[1:-1,:] = 0.5 * ( np.diff(depth[ :-1, :], axis=0) / 
-                               (depth[ :-2, :] + depth[1:-1, :]) +
-                             np.diff(depth[1:  , :], axis=0) / 
-                               (depth[1:-1, :] + depth[2:  , :]) )
+    rmax_x[:, 1:-1] = 0.5 * (
+        np.diff(depth[:, :-1], axis=1) / (depth[:, :-2] + depth[:, 1:-1])
+        + np.diff(depth[:, 1:], axis=1) / (depth[:, 1:-1] + depth[:, 2:])
+    )
+    rmax_y[1:-1, :] = 0.5 * (
+        np.diff(depth[:-1, :], axis=0) / (depth[:-2, :] + depth[1:-1, :])
+        + np.diff(depth[1:, :], axis=0) / (depth[1:-1, :] + depth[2:, :])
+    )
 
     return np.maximum(np.abs(rmax_x), np.abs(rmax_y))
 
-#=======================================================================================
+
+# =======================================================================================
 def calc_rmax_xr(depth):
     """
     Calculate rmax: measure of steepness
@@ -83,29 +85,30 @@ def calc_rmax_xr(depth):
 
     return np.maximum(*both_rmax)
 
-#=======================================================================================
+
+# =======================================================================================
 def SlopeParam(raw_bathy, msk):
 
-# This code is slightly modified from 
-# https://github.com/ESMG/pyroms/blob/master/bathy_smoother/bathy_smoother/bathy_tools.py
-#
-# This function computes the slope parameter defined as 
-#
-#                Z_ij - Z_n
-#                ----------
-#                Z_ij + Z_n
-#
-# where Z_ij is the depth at some point i,j 
-# and Z_n is the neighbouring depth in the 
-# east,west,south or north sense.
-#
-# This code is adapted from the matlab code
-# "LP Bathymetry" by Mathieu Dutour Sikiric
-# http://drobilica.irb.hr/~mathieu/Bathymetry/index.html
-# For a description of the method, see
-# M. Dutour Sikiric, I. Janekovic, M. Kuzmic, A new approach to
-# bathymetry smoothing in sigma-coordinate ocean models, Ocean
-# Modelling 29 (2009) 128--136.
+    # This code is slightly modified from
+    # https://github.com/ESMG/pyroms/blob/master/bathy_smoother/bathy_smoother/bathy_tools.py
+    #
+    # This function computes the slope parameter defined as
+    #
+    #                Z_ij - Z_n
+    #                ----------
+    #                Z_ij + Z_n
+    #
+    # where Z_ij is the depth at some point i,j
+    # and Z_n is the neighbouring depth in the
+    # east,west,south or north sense.
+    #
+    # This code is adapted from the matlab code
+    # "LP Bathymetry" by Mathieu Dutour Sikiric
+    # http://drobilica.irb.hr/~mathieu/Bathymetry/index.html
+    # For a description of the method, see
+    # M. Dutour Sikiric, I. Janekovic, M. Kuzmic, A new approach to
+    # bathymetry smoothing in sigma-coordinate ocean models, Ocean
+    # Modelling 29 (2009) 128--136.
 
     """
     SloParMat = SlopeParam(raw_bathy)
@@ -117,32 +120,30 @@ def SlopeParam(raw_bathy, msk):
     """
 
     bathy = np.copy(raw_bathy)
-    #print bathy.shape
+    # print bathy.shape
     nj, ni = bathy.shape
 
     # Masking land points: bathy is a positive depths field
 
-    bathy[msk ==  0.] = np.nan
+    bathy[msk == 0.0] = np.nan
 
-    nghb_pnts = np.array([[0, 1],[1, 0],[0, -1],[-1, 0]])
+    nghb_pnts = np.array([[0, 1], [1, 0], [0, -1], [-1, 0]])
 
     SloParMat = np.zeros(bathy.shape)
 
-    for j in range(1, nj-1):
-        for i in range(1, ni-1):
-            if msk[j,i] == 1:
-               slopar = 0.
+    for j in range(1, nj - 1):
+        for i in range(1, ni - 1):
+            if msk[j, i] == 1:
+                slopar = 0.0
 
-               for n in range(4):
-                   j_nghb = j + nghb_pnts[n][0]
-                   i_nghb = i + nghb_pnts[n][1]
-                   if msk[j_nghb,i_nghb] == 1:
-                      dep1   = bathy[j,i]
-                      dep2   = bathy[j_nghb,i_nghb]
-                      delta  = abs( (dep1 - dep2) / (dep1 + dep2) )
-                      slopar = np.maximum(slopar, delta)
-               SloParMat[j,i] = slopar
+                for n in range(4):
+                    j_nghb = j + nghb_pnts[n][0]
+                    i_nghb = i + nghb_pnts[n][1]
+                    if msk[j_nghb, i_nghb] == 1:
+                        dep1 = bathy[j, i]
+                        dep2 = bathy[j_nghb, i_nghb]
+                        delta = abs((dep1 - dep2) / (dep1 + dep2))
+                        slopar = np.maximum(slopar, delta)
+                SloParMat[j, i] = slopar
 
     return SloParMat
-
-
