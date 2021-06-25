@@ -154,4 +154,39 @@ class Accessor:
                 f" {mutually_exclusive}"
             )
 
+        # Rudimentary checks on namelist entries
+        for key, val in chained.items():
+            
+            # NB if there are duplicate keys in the namelist (within the same namblock) 
+            # nmlf90 will represent this as a list of length 1
+            if hasattr(val, "__len__") and len(val)==1:
+                raise TypeError('Possible duplication of namelist variable '+key)
+        
+            item_switcher = {'ln': bool, 'nn': int, 'rn': float, 'cn': str, 
+                             'sn': [str, int, str, bool, bool, str, str, str, str]}
+            key_prefix = key[0:2]
+            errmsg_mis = 'Mismatch in number of values provided for '+key
+            errmsg_val = 'Value does not match expected type for '+key
+
+            # Check the namelist key
+            try:
+                key_type = item_switcher.get(key_prefix)
+            except KeyError:
+                print('Namelist variable '+key+' not recognised')
+        
+            # Check number of values 
+            if  hasattr(val, "__len__") != hasattr(key_type, "__len__"):
+                raise TypeError(errmsg_mis)
+            
+            # Check number of values for sn
+            if key_prefix=='sn' and ( len(key_type) != len(val) ):
+                raise TypeError(errmsg_mis)
+         
+            # Check type        
+            if key_prefix=='sn':
+                if key_type != list(type(element) for element in val):
+                    raise TypeError(errmsg_val) 
+            elif key_type != type(val):
+                raise TypeError(errmsg_val)
+            
         return chained
