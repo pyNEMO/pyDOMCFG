@@ -2,6 +2,7 @@
 
 import netCDF4 as nc4
 import numpy as np
+import xarray as xr
 from xarray import DataArray, Dataset
 
 
@@ -36,7 +37,7 @@ def calc_rmax_np(depth):
 
 
 # =======================================================================================
-def calc_rmax_xr(depth):
+def calc_rmax_xr1(depth):
     """
     Calculate rmax: measure of steepness
     This function returns the maximum slope paramater
@@ -85,6 +86,47 @@ def calc_rmax_xr(depth):
 
     return np.maximum(*both_rmax)
 
+# =======================================================================================
+def calc_rmax_xr2(depth):
+    """
+    Calculate rmax: measure of steepness
+    This function returns the slope steepness criteria rmax, which is simply
+    |H[0] - H[1]| / (H[0] + H[1])
+    Parameters
+    ----------
+    depth: float
+        Bottom depth (units: m).
+    Returns
+    -------
+    rmax: float
+        Slope steepness value (units: None)
+    Notes
+    -----
+    This function uses a "conservative approach" and rmax is overestimated.
+    rmax at T points is the maximum rmax estimated at any adjacent U/V point.
+    """
+
+    # Loop over x and y
+    both_rmax = []
+    for dim in depth.dims:
+
+        # Compute rmax
+        rolled = depth.rolling({dim: 2}).construct("window_dim")
+        diff = rolled.diff("window_dim").squeeze("window_dim")
+        rmax = np.abs(diff) / rolled.sum("window_dim")
+
+        # Construct dimension with velocity points adjacent to any T point
+        # We need to shift as we rolled twice and to force boundaries = NaN
+        rmax = rmax.rolling({dim: 2}).construct("vel_points")
+        rmax = rmax.shift({dim: -1})
+        rmax[{dim: [0, -1]}] = None
+
+        both_rmax.append(rmax)
+
+    rmax = xr.concat(both_rmax, "vel_points")
+    rmax = rmax.max("vel_points", skipna=True)
+
+    return rmax.fillna(0)
 
 # =======================================================================================
 def SlopeParam(raw_bathy, msk):

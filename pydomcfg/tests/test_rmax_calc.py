@@ -122,17 +122,21 @@ da_env.data = zenv
 
 # calc rmax according to:
 
-# 1. calc_rmax_xr
-rmax = np.amax(calc_rmax_xr(da_env) * ocean).values
-print("1. calc_rmax_xr: " + str(rmax))
+# 1. calc_rmax_xr1: first implem. using the average
+rmax = np.amax(calc_rmax_xr1(da_env) * ocean).values
+print("1. calc_rmax_xr1: " + str(rmax))
 
-# 2. calc_rmax_np
+# 2. calc_rmax_xr2: last implem. using the maximum
+rmax = np.amax(calc_rmax_xr2(da_env) * ocean).values
+print("2. calc_rmax_xr2: " + str(rmax))
+
+# 2. calc_rmax_np: original numpy code
 rmax = np.amax(calc_rmax_np(zenv) * ocean.values)
-print("2. calc_rmax_np: " + str(rmax))
+print("3. calc_rmax_np: " + str(rmax))
 
-# 3. SlopeParam
+# 3. SlopeParam: pyROMS very inefficient implem.
 rmax = np.amax(SlopeParam(zenv, ocean.values))
-print("3. SlopeParam: " + str(rmax))
+print("4. SlopeParam: " + str(rmax))
 
 da_env.data = calc_rmax_np(zenv) * ocean.values - SlopeParam(zenv, ocean.values)
 da_env.plot()
