@@ -160,6 +160,9 @@ def _calc_rmax(depth):
     rmax at T points is the maximum rmax estimated at any adjacent U/V point.
     """
 
+    # Mask land
+    depth = depth.where(depth > 0)
+
     # Loop over x and y
     both_rmax = []
     for dim in depth.dims:
@@ -170,14 +173,18 @@ def _calc_rmax(depth):
         rmax = np.abs(diff) / rolled.sum("window_dim")
 
         # Construct dimension with velocity points adjacent to any T point
-        # We need to shift as we rolled twice and to force boundaries = NaN
+        # We need to shift as we rolled twice
         rmax = rmax.rolling({dim: 2}).construct("vel_points")
         rmax = rmax.shift({dim: -1})
-        rmax[{dim: [0, -1]}] = None
 
         both_rmax.append(rmax)
 
+    # Find maximum rmax at adjacent U/V points
     rmax = xr.concat(both_rmax, "vel_points")
     rmax = rmax.max("vel_points", skipna=True)
+
+    # Mask halo points
+    for dim in rmax.dims:
+        rmax[{dim: [0, -1]}] = 0
 
     return rmax.fillna(0)
