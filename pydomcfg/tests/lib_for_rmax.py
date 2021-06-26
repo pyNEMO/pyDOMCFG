@@ -22,15 +22,16 @@ def calc_rmax_np(depth):
     rmax: float
             Slope steepness value (units: None)
     """
+    
     rmax_x, rmax_y = np.zeros_like(depth), np.zeros_like(depth)
 
-    rmax_x[:, 1:-1] = 0.5 * (
-        np.diff(depth[:, :-1], axis=1) / (depth[:, :-2] + depth[:, 1:-1])
-        + np.diff(depth[:, 1:], axis=1) / (depth[:, 1:-1] + depth[:, 2:])
+    rmax_x[1:-1, 1:-1] = np.maximum (
+        np.abs( np.diff(depth[1:-1, :-1], axis=1) / (depth[1:-1,  :-2] + depth[1:-1, 1:-1]) ),
+        np.abs( np.diff(depth[1:-1,1:  ], axis=1) / (depth[1:-1, 1:-1] + depth[1:-1, 2:  ]) )
     )
-    rmax_y[1:-1, :] = 0.5 * (
-        np.diff(depth[:-1, :], axis=0) / (depth[:-2, :] + depth[1:-1, :])
-        + np.diff(depth[1:, :], axis=0) / (depth[1:-1, :] + depth[2:, :])
+    rmax_y[1:-1, 1:-1] = np.maximum (
+        np.abs( np.diff(depth[ :-1, 1:-1], axis=0) / (depth[ :-2, 1:-1] + depth[1:-1, 1:-1]) ) ,
+        np.abs( np.diff(depth[1:  , 1:-1], axis=0) / (depth[1:-1, 1:-1] + depth[2:,   1:-1]) )
     )
 
     return np.maximum(np.abs(rmax_x), np.abs(rmax_y))
