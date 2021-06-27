@@ -20,7 +20,8 @@ class Zgr:
         Parameters
         ----------
         ds_bathy: Dataset
-             xarray dataset including grid coordinates and bathymetry
+             xarray dataset including grid coordinates and bathymetry.
+             All bathymetry values MUST be >= 0, where 0 is land.
         jpk: int
              number of computational levels
         """
