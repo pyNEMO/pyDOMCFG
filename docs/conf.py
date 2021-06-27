@@ -9,6 +9,7 @@
 import os
 import sys
 
+import sphinx_autosummary_accessors
 import sphinx_rtd_theme  # noqa: F401
 
 # isort: off
@@ -40,8 +41,10 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
     "sphinx.ext.extlinks",
+    "sphinx.ext.intersphinx",
     "sphinx_rtd_theme",
     "numpydoc",
+    "sphinx_autosummary_accessors",
 ]
 
 # GitHub links
@@ -50,7 +53,7 @@ extlinks = {
 }
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+templates_path = ["_templates", sphinx_autosummary_accessors.templates_path]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

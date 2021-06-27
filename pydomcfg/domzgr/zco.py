@@ -88,6 +88,7 @@ class Zco(Zgr):
 
         See Also
         --------
+        pydomcfg.domzgr.zco.Zco.__call__: Underlying method.
         NEMOv4.0: ``domzgr/zgr_z`` subroutine
 
         References

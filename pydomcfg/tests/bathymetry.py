@@ -142,34 +142,49 @@ def _calc_rmax(depth):
     Calculate rmax: measure of steepness
 
     This function returns the slope steepness criteria rmax, which is simply
-    (H[0] - H[1]) / (H[0] + H[1])
+    |H[0] - H[1]| / (H[0] + H[1])
 
     Parameters
     ----------
     depth: float
-            Bottom depth (units: m).
+        Bottom depth (units: m).
 
     Returns
     -------
     rmax: float
-            Slope steepness value (units: None)
-    """
-    depth = depth.reset_index(list(depth.dims))
+        Slope steepness value (units: None)
 
+    Notes
+    -----
+    This function uses a "conservative approach" and rmax is overestimated.
+    rmax at T points is the maximum rmax estimated at any adjacent U/V point.
+    """
+
+    # Mask land
+    depth = depth.where(depth > 0)
+
+    # Loop over x and y
     both_rmax = []
     for dim in depth.dims:
 
-        # (H[0] - H[1]) / (H[0] + H[1])
-        depth_diff = depth.diff(dim)
-        depth_rolling_sum = depth.rolling({dim: 2}).sum().dropna(dim)
-        rmax = depth_diff / depth_rolling_sum
+        # Compute rmax
+        rolled = depth.rolling({dim: 2}).construct("window_dim")
+        diff = rolled.diff("window_dim").squeeze("window_dim")
+        rmax = np.abs(diff) / rolled.sum("window_dim")
 
-        # (R[0] + R[1]) / 2
-        rmax = rmax.rolling({dim: 2}).mean().dropna(dim)
+        # Construct dimension with velocity points adjacent to any T point
+        # We need to shift as we rolled twice
+        rmax = rmax.rolling({dim: 2}).construct("vel_points")
+        rmax = rmax.shift({dim: -1})
 
-        # Fill first row and column
-        rmax = rmax.pad({dim: (1, 1)}, constant_values=0)
+        both_rmax.append(rmax)
 
-        both_rmax.append(np.abs(rmax))
+    # Find maximum rmax at adjacent U/V points
+    rmax = xr.concat(both_rmax, "vel_points")
+    rmax = rmax.max("vel_points", skipna=True)
 
-    return np.maximum(*both_rmax)
+    # Mask halo points
+    for dim in rmax.dims:
+        rmax[{dim: [0, -1]}] = 0
+
+    return rmax.fillna(0)
