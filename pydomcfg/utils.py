@@ -2,7 +2,7 @@
 Utilities
 """
 
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 import numpy as np
 import xarray as xr
@@ -106,7 +106,7 @@ def _maybe_to_int(value: Any) -> Any:
     return value
 
 
-def _check_namelist_entries(keys_dict):
+def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
 
     # Rudimentary checks on namelist entries.
     # TODO:
@@ -119,16 +119,16 @@ def _check_namelist_entries(keys_dict):
         "sn": [str, int, str, bool, bool, str, str, str, str],
     }
 
-    keys_dict = {
+    entries_mapper = {
         key: value
-        for key, value in keys_dict.items()
+        for key, value in entries_mapper.items()
         if any(key.startswith(prefix + "_") for prefix in prefix_type_mapper)
     }
 
-    for key, val in keys_dict.items():
+    for key, val in entries_mapper.items():
 
         # Get expected type(s)
-        maybe_key_type = prefix_type_mapper[key[0:2]]
+        maybe_key_type = prefix_type_mapper[key[:2]]
         if isinstance(maybe_key_type, (type, tuple)):
             # Scalars or bool
             key_type = maybe_key_type
