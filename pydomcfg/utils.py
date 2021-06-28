@@ -2,7 +2,7 @@
 Utilities
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 import xarray as xr
@@ -99,6 +99,13 @@ def generate_cartesian_grid(
     return ds.set_coords(ds.variables)
 
 
+def _maybe_to_int(value: Any) -> Any:
+    """Convert floats that are integers"""
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
 def _check_namelist_entries(keys_dict):
 
     # Rudimentary checks on namelist entries.
@@ -125,38 +132,36 @@ def _check_namelist_entries(keys_dict):
         if isinstance(maybe_key_type, (type, tuple)):
             # Scalars or bool
             key_type = maybe_key_type
-            element_types = None
+            val_types = None
         elif isinstance(maybe_key_type, list):
             # Lists like "sn_"
             key_type = type(maybe_key_type)
-            element_types = maybe_key_type
+            val_types = maybe_key_type
         else:
             raise NotImplementedError
 
-        # Check type
-        if isinstance(val, float) and val.is_integer():
-            val = int(val)
-        if not isinstance(val, key_type):
+        # Check key type
+        if not isinstance(_maybe_to_int(val), key_type):
             raise TypeError(
                 f"Value does not match expected type for {key!r}."
                 f"\nValue: {val!r}\nExpected type(s): {key_type!r}"
             )
 
-        # Check list elements
-        if element_types:
-            # Length
-            if len(val) != len(element_types):
+        # Check list values
+        if val_types:
+            # Check length
+            if len(val) != len(val_types):
                 raise ValueError(
                     f"Mismatch in number of values provided for {key!r}."
-                    f"\nValues: {val!r}\nExpected length: {len(element_types)}"
+                    f"\nValues: {val!r}\nExpected length: {len(val_types)}"
                     f"\nActual length: {len(val)}"
                 )
-            # Element types
-            val = [
-                int(v) if isinstance(v, float) and v.is_integer() else v for v in val
-            ]
-            if not all(isinstance(v, t) for v, t in zip(val, element_types)):
+
+            # Check type
+            if not all(
+                isinstance(v, v_t) for v, v_t in zip(map(_maybe_to_int, val), val_types)
+            ):
                 raise TypeError(
                     f"Values do not match expected types for {key!r}."
-                    f"\nValues: {val!r}\nExpected types: {element_types}"
+                    f"\nValues: {val!r}\nExpected types: {val_types}"
                 )
