@@ -148,7 +148,7 @@ def _check_namelist_entries(keys_dict):
             if len(val) != len(element_types):
                 raise ValueError(
                     f"Mismatch in number of values provided for {key!r}."
-                    f"\nValues: {val!r}\nExpected lenght: {len(element_types)}"
+                    f"\nValues: {val!r}\nExpected length: {len(element_types)}"
                     f"\nActual length: {len(val)}"
                 )
             # Element types
