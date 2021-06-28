@@ -97,3 +97,66 @@ def generate_cartesian_grid(
     ds = ds.transpose(*("y", "x"))
 
     return ds.set_coords(ds.variables)
+
+
+def _check_namelist_entries(keys_dict):
+
+    # Rudimentary checks on namelist entries.
+    # TODO:
+    #   I haven't really tested this
+    prefix_type_mapper = {
+        "ln": bool,
+        "nn": int,
+        "rn": (int, float),
+        "cn": str,
+        "sn": [str, int, str, bool, bool, str, str, str, str],
+    }
+
+    keys_dict = {
+        key: value
+        for key, value in keys_dict.items()
+        if any(key.startswith(prefix + "_") for prefix in prefix_type_mapper)
+    }
+
+    for key, val in keys_dict.items():
+
+        # Get expected type(s)
+        maybe_key_type = prefix_type_mapper[key[0:2]]
+        if isinstance(maybe_key_type, (type, tuple)):
+            # Scalars or bool
+            key_type = maybe_key_type
+            element_types = None
+        elif isinstance(maybe_key_type, list):
+            # Lists like "sn_"
+            key_type = type(maybe_key_type)
+            element_types = maybe_key_type
+        else:
+            raise NotImplementedError
+
+        # Check type
+        if isinstance(val, float) and val.is_integer():
+            val = int(val)
+        if not isinstance(val, key_type):
+            raise TypeError(
+                f"Value does not match expected type for {key!r}."
+                f"\nValue: {val!r}\nExpected type(s): {key_type!r}"
+            )
+
+        # Check list elements
+        if element_types:
+            # Length
+            if len(val) != len(element_types):
+                raise ValueError(
+                    f"Mismatch in number of values provided for {key!r}."
+                    f"\nValues: {val!r}\nExpected lenght: {len(element_types)}"
+                    f"\nActual length: {len(val)}"
+                )
+            # Element types
+            val = [
+                int(v) if isinstance(v, float) and v.is_integer() else v for v in val
+            ]
+            if not all(isinstance(v, t) for v, t in zip(val, element_types)):
+                raise TypeError(
+                    f"Values do not match expected types for {key!r}."
+                    f"\nValues: {val!r}\nExpected types: {element_types}"
+                )
