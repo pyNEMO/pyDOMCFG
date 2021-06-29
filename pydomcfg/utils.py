@@ -23,13 +23,12 @@ def _are_nemo_none(var: Iterable) -> Iterator[bool]:
         yield _is_nemo_none(v)
 
 
-# -----------------------------------------------------------------------------
 def _calc_rmax(depth: DataArray) -> DataArray:
     """
     Calculate rmax: measure of steepness
-    This function returns the maximum slope paramater
+    This function returns the slope paramater field
 
-    rmax = abs(Hb - Ha) / (Ha + Hb)
+    r = abs(Hb - Ha) / (Ha + Hb)
 
     where Ha and Hb are the depths of adjacent grid cells (Mellor et al 1998).
 
@@ -44,33 +43,43 @@ def _calc_rmax(depth: DataArray) -> DataArray:
     Returns
     -------
     DataArray
-        2D maximum slope parameter (units: None)
+        2D slope parameter (units: None)
+
+    Notes
+    -----
+    This function uses a "conservative approach" and rmax is overestimated.
+    rmax at T points is the maximum rmax estimated at any adjacent U/V point.
     """
+    # Mask land
+    depth = depth.where(depth > 0)
 
-    depth = DataArray(depth.reset_index(list(depth.dims)))
-
+    # Loop over x and y
     both_rmax = []
     for dim in depth.dims:
 
-        # (Hb - Ha) / (Ha + Hb)
-        depth_diff = depth.diff(dim)
-        depth_rolling_sum = depth.rolling({dim: 2}).sum().dropna(dim)
-        rmax = depth_diff / depth_rolling_sum
-        # dealing with nans at land points
-        rmax = rmax.where(np.isfinite(rmax), 0)
+        # Compute rmax
+        rolled = depth.rolling({dim: 2}).construct("window_dim")
+        diff = rolled.diff("window_dim").squeeze("window_dim")
+        rmax = np.abs(diff) / rolled.sum("window_dim")
 
-        # (rmax_a + rmax_b) / 2
-        rmax = rmax.rolling({dim: 2}).mean().dropna(dim)
+        # Construct dimension with velocity points adjacent to any T point
+        # We need to shift as we rolled twice
+        rmax = rmax.rolling({dim: 2}).construct("vel_points")
+        rmax = rmax.shift({dim: -1})
 
-        # Fill first row and column
-        rmax = rmax.pad({dim: (1, 1)}, constant_values=0)
+        both_rmax.append(rmax)
 
-        both_rmax.append(np.abs(rmax))
+    # Find maximum rmax at adjacent U/V points
+    rmax = xr.concat(both_rmax, "vel_points")
+    rmax = rmax.max("vel_points", skipna=True)
 
-    return np.maximum(*both_rmax)
+    # Mask halo points
+    for dim in rmax.dims:
+        rmax[{dim: [0, -1]}] = 0
+
+    return rmax.fillna(0)
 
 
-# -----------------------------------------------------------------------------
 def _smooth_MB06(depth: DataArray, rmax: float) -> DataArray:
     """
     This is NEMO implementation of the direct iterative method
@@ -120,9 +129,9 @@ def _smooth_MB06(depth: DataArray, rmax: float) -> DataArray:
     ztmpj2 = zenv.copy()
 
     # Computing the initial maximum slope parameter
-    zrmax = np.nanmax(_calc_rmax(depth))
-    zri = np.ones(zenv.shape) * zrmax
-    zrj = np.ones(zenv.shape) * zrmax
+    zrmax = 1.0  # np.nanmax(_calc_rmax(depth))
+    zri = np.ones(zenv.shape)  # * zrmax
+    zrj = np.ones(zenv.shape)  # * zrmax
 
     tol = 1.0e-8
     itr = 0
@@ -144,6 +153,7 @@ def _smooth_MB06(depth: DataArray, rmax: float) -> DataArray:
 
         zri *= 0.0
         zrj *= 0.0
+
         for j in range(nj - 1):
             for i in range(ni - 1):
                 ip1 = np.minimum(i + 1, ni)
@@ -173,7 +183,6 @@ def _smooth_MB06(depth: DataArray, rmax: float) -> DataArray:
     return da_zenv
 
 
-# -----------------------------------------------------------------------------
 def generate_cartesian_grid(
     ppe1_m,
     ppe2_m,

@@ -7,6 +7,7 @@ Class to generate NEMO v4.0 s-coordinates
 from typing import Optional  # , Tuple
 
 import numpy as np
+import xarray as xr
 from xarray import DataArray, Dataset
 
 from pydomcfg.utils import _smooth_MB06  # , _calc_rmax
@@ -121,15 +122,14 @@ class Sco(Zgr):
 
         bathy = self._bathy["Bathymetry"]
 
-        # Land-Sea mask of the domain:
+        # compute land-sea mask of the domain:
         # 0 = land
         # 1 = ocean
-        self._ocean = bathy.where(bathy == 0, 1)
+        self._lsm = xr.where(bathy > 0, 1, 0)
 
         # set maximum and minumum depths of model bathymetry
-        bathy = bathy.where(bathy < self._max_dep, self._max_dep)
-        bathy = bathy.where(bathy > self._min_dep, self._min_dep)
-        bathy *= self._ocean
+        bathy = np.minimum(bathy, self._max_dep)
+        bathy = np.maximum(bathy, self._min_dep) * self._lsm
 
         # compute envelope bathymetry DataArray
         self._envlp = self._compute_env(bathy)
@@ -193,46 +193,79 @@ class Sco(Zgr):
         ----------
         depth: DataArray
             xarray DataArray of the 2D bottom topography
+            it MUST have only two dimensions named "x" and "y"
         Returns
         -------
         DataArray
             xarray DataArray of the 2D envelope bathymetry
         """
 
-        da_zenv = depth.copy()
-
         if self._rmax:
 
-            # getting the actual numpy array
-            # TO BE OPTIMISED
-            zenv = da_zenv.data
-            nj = zenv.shape[0]
-            ni = zenv.shape[1]
+            lsm = self._lsm
 
             # set first land point adjacent to a wet cell to
             # min_dep as this needs to be included in smoothing
-            for j in range(nj - 1):
-                for i in range(ni - 1):
-                    if not self._ocean[j, i]:
-                        ip1 = np.minimum(i + 1, ni)
-                        jp1 = np.minimum(j + 1, nj)
-                        im1 = np.maximum(i - 1, 0)
-                        jm1 = np.maximum(j - 1, 0)
-                        if (
-                            depth[jp1, im1]
-                            + depth[jp1, i]
-                            + depth[jp1, ip1]
-                            + depth[j, im1]
-                            + depth[j, ip1]
-                            + depth[jm1, im1]
-                            + depth[jm1, i]
-                            + depth[jm1, ip1]
-                        ) > 0.0:
-                            zenv[j, i] = self._min_dep
 
-            da_zenv.data = zenv
-            # print(np.nanmax(_calc_rmax(da_zenv)*self._ocean))
-            da_zenv = _smooth_MB06(da_zenv, self._rmax)
-            da_zenv = da_zenv.where(da_zenv > self._min_dep, self._min_dep)
+            # ------------------------------------------------------------
+            # This is the original NEMO Fortran90 code: translated
+            # in python it is very inefficient
+            # ------------------------------------------------------------
+            # zenv = depth.copy()
+            # env  = zenv.data
+            #
+            # nj = env.shape[0]
+            # ni = env.shape[1]
+            #
+            # for j in range(nj - 1):
+            #    for i in range(ni - 1):
+            #        if not lsm[j, i]:
+            #           ip1 = np.minimum(i + 1, ni)
+            #           jp1 = np.minimum(j + 1, nj)
+            #           im1 = np.maximum(i - 1, 0)
+            #           jm1 = np.maximum(j - 1, 0)
+            #           if (
+            #               depth[jp1, im1]
+            #               + depth[jp1, i]
+            #               + depth[jp1, ip1]
+            #               + depth[j, im1]
+            #               + depth[j, ip1]
+            #               + depth[jm1, im1]
+            #               + depth[jm1, i]
+            #               + depth[jm1, ip1]
+            #           ) > 0.0:
+            #               env[j, i] = min_dep
+            #
+            # zenv.data = env
+            # ------------------------------------------------------------
 
-        return da_zenv
+            # ------------------------------------------------------------
+            # This is my translation into xarray. I think it does what
+            # it should, a part on the boundaries: I tested with AMM7,
+            # and zenv computed with NEMO-like code (above) and this
+            # one are perfectly identical apart for two single different
+            # points just on the border ... I don't think it will make
+            # a huge difference but if there is a better way to manage
+            # the borders with xarray and obtain exactly the same results
+            # of the original NEMO-like code, happy to use it.
+            # ------------------------------------------------------------
+            cst_lsm = lsm * 0.0
+            ngb_pnt = [-1, 0, 1]
+            for j in ngb_pnt:
+                for i in ngb_pnt:
+                    if j != 0 or i != 0:
+                        lsm_sft = lsm.shift({lsm.dims[1]: i, lsm.dims[0]: j})
+                        cst_lsm += lsm_sft
+
+            cst_lsm = cst_lsm.where(lsm == 0, 0)
+            cst_lsm = cst_lsm.where(cst_lsm == 0, 1)
+            zenv = depth.where(cst_lsm == 0, self._min_dep)
+            for dim in lsm.dims:
+                for indx in [0, -1]:
+                    zenv[{dim: indx}] = depth[{dim: indx}]
+            # ------------------------------------------------------------
+
+            zenv = _smooth_MB06(zenv, self._rmax)
+            zenv = zenv.where(zenv > self._min_dep, self._min_dep)
+
+        return zenv
