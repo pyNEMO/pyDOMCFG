@@ -250,19 +250,10 @@ class Sco(Zgr):
             # the borders with xarray and obtain exactly the same results
             # of the original NEMO-like code, happy to use it.
             # ------------------------------------------------------------
-            cst_lsm = lsm * 0.0
-            ngb_pnt = [-1, 0, 1]
-            for j, i in product(ngb_pnt, repeat=2):
-                if not (j == 0 and i == 0):
-                    lsm_sft = lsm.shift({lsm.dims[1]: i, lsm.dims[0]: j})
-                    cst_lsm += lsm_sft
-
-            cst_lsm = cst_lsm.where(lsm == 0, 0)
-            cst_lsm = cst_lsm.where(cst_lsm == 0, 1)
+            cst_lsm = lsm.rolling({dim: 3 for dim in lsm.dims}, min_periods=2).sum()
+            cst_lsm = cst_lsm.shift({dim: -1 for dim in lsm.dims})
+            cst_lsm = (cst_lsm > 0) & (lsm == 0)
             zenv = depth.where(cst_lsm == 0, self._min_dep)
-            for dim in lsm.dims:
-                for indx in [0, -1]:
-                    zenv[{dim: indx}] = depth[{dim: indx}]
             # ------------------------------------------------------------
 
             zenv = _smooth_MB06(zenv, self._rmax)
