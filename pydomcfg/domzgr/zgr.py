@@ -67,7 +67,7 @@ class Zgr:
     @staticmethod
     def _compute_z3(
         su: DataArray,
-        ss1: DataArray,
+        ss: DataArray,
         a1: Union[float, DataArray],
         a2: Union[float, DataArray],
         a3: Union[float, DataArray],
@@ -82,7 +82,7 @@ class Zgr:
         su: DataArray
             uniform non-dimensional vertical coordinate s, aka sigma-coordinates.
             0 <= s <= 1
-        ss1: DataArray
+        ss: DataArray
             stretched non-dimensional vertical coordinate s,
             0 <= s <= 1
         a1, a2, a3: float, DataArray
@@ -98,7 +98,7 @@ class Zgr:
         z is downward positive.
         """
 
-        return a1 + a2 * su + a3 * ss1
+        return a1 + a2 * su + a3 * ss
 
     # -------------------------------------------------------------------------
     @staticmethod
