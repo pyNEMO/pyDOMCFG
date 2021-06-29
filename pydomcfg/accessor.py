@@ -124,7 +124,7 @@ class Accessor:
 
         if not HAS_F90NML:
             raise ImportError(
-                "`f90nml` MUST be installed" " to use `obj.domcfg.from_namelist()`"
+                "`f90nml` MUST be installed to use `obj.domcfg.from_namelist()`"
             )
 
         if not self.nml_ref_path:
@@ -135,7 +135,7 @@ class Accessor:
 
         if self.jpk:
             warnings.warn(
-                "`obj.domcfg.jpk` is ignored." " `jpk` is inferred from the namelists."
+                "`obj.domcfg.jpk` is ignored. `jpk` is inferred from the namelists."
             )
 
         # Read namelists: cfg overrides ref

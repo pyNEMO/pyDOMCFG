@@ -127,10 +127,10 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
 
     for key, val in entries_mapper.items():
 
-        # Get expected type(s)
+        # Get expected types
         maybe_key_type = prefix_type_mapper[key[:2]]
         if isinstance(maybe_key_type, (type, tuple)):
-            # Scalars or bool
+            # Single type or tuple of types
             key_type = maybe_key_type
             val_types = None
         elif isinstance(maybe_key_type, list):
@@ -143,25 +143,23 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
         # Check key type
         if not isinstance(_maybe_to_int(val), key_type):
             raise TypeError(
-                f"Value does not match expected type for {key!r}."
-                f"\nValue: {val!r}\nExpected type(s): {key_type!r}"
+                f"Value does not match expected types for {key!r}."
+                f"\nValue: {val!r}\nExpected types: {key_type}"
             )
 
-        # Check list values
+        # Check list of values
         if val_types:
             # Check length
             if len(val) != len(val_types):
                 raise ValueError(
                     f"Mismatch in number of values provided for {key!r}."
-                    f"\nValues: {val!r}\nExpected length: {len(val_types)}"
-                    f"\nActual length: {len(val)}"
+                    f"\nValues: {val}\nExpected length: {len(val_types)}"
                 )
 
-            # Check type
-            if not all(
-                isinstance(v, v_t) for v, v_t in zip(map(_maybe_to_int, val), val_types)
-            ):
-                raise TypeError(
-                    f"Values do not match expected types for {key!r}."
-                    f"\nValues: {val!r}\nExpected types: {val_types}"
-                )
+            # Check type of each element
+            for v, v_type in zip(val, val_types):
+                if not isinstance(_maybe_to_int(v), v_type):
+                    raise TypeError(
+                        f"Values do not match expected types for {key!r}."
+                        f"\nValues: {val}\nExpected types: {val_types}"
+                    )
