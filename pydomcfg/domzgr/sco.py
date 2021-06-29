@@ -4,7 +4,6 @@
 Class to generate NEMO v4.0 s-coordinates
 """
 
-from itertools import product
 from typing import Optional
 
 import numpy as np
@@ -207,54 +206,10 @@ class Sco(Zgr):
 
             # set first land point adjacent to a wet cell to
             # min_dep as this needs to be included in smoothing
-
-            # ------------------------------------------------------------
-            # This is the original NEMO Fortran90 code: translated
-            # in python it is very inefficient
-            # ------------------------------------------------------------
-            # zenv = depth.copy()
-            # env  = zenv.data
-            #
-            # nj = env.shape[0]
-            # ni = env.shape[1]
-            #
-            # for j in range(nj - 1):
-            #    for i in range(ni - 1):
-            #        if not lsm[j, i]:
-            #           ip1 = np.minimum(i + 1, ni)
-            #           jp1 = np.minimum(j + 1, nj)
-            #           im1 = np.maximum(i - 1, 0)
-            #           jm1 = np.maximum(j - 1, 0)
-            #           if (
-            #               depth[jp1, im1]
-            #               + depth[jp1, i]
-            #               + depth[jp1, ip1]
-            #               + depth[j, im1]
-            #               + depth[j, ip1]
-            #               + depth[jm1, im1]
-            #               + depth[jm1, i]
-            #               + depth[jm1, ip1]
-            #           ) > 0.0:
-            #               env[j, i] = min_dep
-            #
-            # zenv.data = env
-            # ------------------------------------------------------------
-
-            # ------------------------------------------------------------
-            # This is my translation into xarray. I think it does what
-            # it should, a part on the boundaries: I tested with AMM7,
-            # and zenv computed with NEMO-like code (above) and this
-            # one are perfectly identical apart for two single different
-            # points just on the border ... I don't think it will make
-            # a huge difference but if there is a better way to manage
-            # the borders with xarray and obtain exactly the same results
-            # of the original NEMO-like code, happy to use it.
-            # ------------------------------------------------------------
             cst_lsm = lsm.rolling({dim: 3 for dim in lsm.dims}, min_periods=2).sum()
             cst_lsm = cst_lsm.shift({dim: -1 for dim in lsm.dims})
             cst_lsm = (cst_lsm > 0) & (lsm == 0)
             zenv = depth.where(cst_lsm == 0, self._min_dep)
-            # ------------------------------------------------------------
 
             zenv = _smooth_MB06(zenv, self._rmax)
             zenv = zenv.where(zenv > self._min_dep, self._min_dep)
