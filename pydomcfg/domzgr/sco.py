@@ -4,13 +4,14 @@
 Class to generate NEMO v4.0 s-coordinates
 """
 
-from typing import Optional  # , Tuple
+from itertools import product
+from typing import Optional
 
 import numpy as np
 import xarray as xr
 from xarray import DataArray, Dataset
 
-from pydomcfg.utils import _smooth_MB06  # , _calc_rmax
+from pydomcfg.utils import _smooth_MB06
 
 from .zgr import Zgr
 
@@ -193,7 +194,7 @@ class Sco(Zgr):
         ----------
         depth: DataArray
             xarray DataArray of the 2D bottom topography
-            it MUST have only two dimensions named "x" and "y"
+            it MUST have only two dimensions
         Returns
         -------
         DataArray
@@ -251,11 +252,10 @@ class Sco(Zgr):
             # ------------------------------------------------------------
             cst_lsm = lsm * 0.0
             ngb_pnt = [-1, 0, 1]
-            for j in ngb_pnt:
-                for i in ngb_pnt:
-                    if j != 0 or i != 0:
-                        lsm_sft = lsm.shift({lsm.dims[1]: i, lsm.dims[0]: j})
-                        cst_lsm += lsm_sft
+            for j, i in product(ngb_pnt, repeat=2):
+                if not (j == 0 and i == 0):
+                    lsm_sft = lsm.shift({lsm.dims[1]: i, lsm.dims[0]: j})
+                    cst_lsm += lsm_sft
 
             cst_lsm = cst_lsm.where(lsm == 0, 0)
             cst_lsm = cst_lsm.where(cst_lsm == 0, 1)
