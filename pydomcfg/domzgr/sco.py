@@ -4,7 +4,7 @@
 Class to generate NEMO v4.0 s-coordinates
 """
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import xarray as xr
@@ -43,7 +43,6 @@ class Sco(Zgr):
        *) Madec, Delecluse, Crepon & Lott, JPO 26(8):1393-1408, 1996.
     """
 
-    # --------------------------------------------------------------------------
     def __call__(
         self,
         min_dep: float,
@@ -138,17 +137,16 @@ class Sco(Zgr):
         self._sigmas = self._compute_sigma(self._z)
 
         # compute z3 depths of zco vertical levels
-        # dsz = self._sco_z3(ds_env)
+        z3t, z3w = self._sco_z3
 
         # compute e3 scale factors
-        # dse = self._compute_e3(dsz) if self._ln_e3_dep else self._analyt_e3(dsz)
+        e3t, e3w = self._compute_e3(z3t, z3w)
 
         # addind this only to not make darglint complying
-        ds = self._bathy.copy()
-        ds["hbatt"] = self._envlp
-        return ds
+        # ds = self._bathy.copy()
+        # ds["hbatt"] = self._envlp
+        return self._merge_z3_and_e3(z3t, z3w, e3t, e3w)
 
-    # --------------------------------------------------------------------------
     def _check_stretch_par(self, psurf, pbott, alpha, efold, pbot2):
         """
         Check consistency of stretching parameters
@@ -174,7 +172,6 @@ class Sco(Zgr):
                      sf12 stretching."
                 )
 
-    # --------------------------------------------------------------------------
     def _compute_env(self, depth: DataArray) -> DataArray:
         """
         Compute the envelope bathymetry surface by applying the
@@ -215,3 +212,145 @@ class Sco(Zgr):
             zenv = zenv.where(zenv > self._min_dep, self._min_dep)
 
         return zenv
+
+    @property
+    def _sco_z3(self) -> Tuple[DataArray, ...]:
+        """Compute and return z3{t,w} for s-coordinates grids"""
+
+        grids = ("T", "W")
+        sigmas = self._sigmas
+        scosrf = self._envlp * 0.0  # unperturbed free-surface
+
+        both_z3 = []
+        for grid, sigma in zip(grids, sigmas):
+
+            if self._stretch:
+                # Stretched sco grid
+                su = -sigma
+                ss = self._stretch_sco(-sigma)
+                a1 = scosrf
+                a2 = 0.0
+                a3 = self._envlp
+                if self._stretch != "sf12":
+                    a2 += self._hc
+                    a3 -= self._hc
+            else:
+                # Uniform sco grid
+                su = -sigma
+                ss = DataArray((0.0))
+                a1 = a3 = scosrf
+                a2 = self._envlp
+
+            z3 = self._compute_z3(su, ss, a1, a2, a3)
+
+            both_z3 += [z3]
+
+        return tuple(both_z3)
+
+    def _stretch_sco(self, sigma: DataArray) -> DataArray:
+        """
+        Wrapping method for calling generalised analytical
+        stretching function for terrain-following s-coordinates.
+
+        Parameters
+        ----------
+        sigma: DataArray
+            Uniform non-dimensional sigma-coordinate:
+            MUST BE positive, i.e. 0 <= sigma <= 1
+
+        Returns
+        -------
+        DataArray
+            Stretched coordinate
+        """
+        if self._stretch == "sh94":
+            ss = self._sh94(sigma)
+        elif self._stretch == "md96":
+            ss = self._md96(sigma)
+        # elif self._stretch == "sf12":
+        #    ss = self._sf12(sigma)
+
+        return ss
+
+    def _sh94(self, sigma: DataArray) -> DataArray:
+        """
+        Song and Haidvogel 1994 analytical stretching
+        function for terrain-following s-coordinates.
+
+        Reference:
+            Song & Haidvogel, J. Comp. Phy., 115, 228-244, 1994.
+
+        Parameters
+        ----------
+        sigma: DataArray
+            Uniform non-dimensional sigma-coordinate:
+            MUST BE positive, i.e. 0 <= sigma <= 1
+
+        Returns
+        -------
+        DataArray
+            Stretched coordinate
+        """
+        ca = self._psurf
+        cb = self._pbott
+
+        if ca == 0.0:
+            ss = sigma
+        else:
+            ss = (1.0 - cb) * np.sinh(ca * sigma) / np.sinh(ca) + cb * (
+                (np.tanh(ca * (sigma + 0.0)) - np.tanh(0.0 * ca))
+                / (2.0 * np.tanh(0.0 * ca))
+            )
+
+        return ss
+
+    def _md96(self, sigma: DataArray) -> DataArray:
+        """
+        Madec et al. 1996 analytical stretching
+        function for terrain-following s-coordinates.
+
+        Reference:
+            pag 65 of NEMO Manual
+            Madec, Lott, Delecluse and Crepon, 1996. JPO, 26, 1393-1408
+
+        Parameters
+        ----------
+        sigma: DataArray
+            Uniform non-dimensional sigma-coordinate:
+            MUST BE positive, i.e. 0 <= sigma <= 1
+
+        Returns
+        -------
+        DataArray
+            Stretched coordinate
+        """
+        ca = self._psurf
+        cb = self._pbott
+
+        ss = (
+            (np.tanh(ca * (sigma + cb)) - np.tanh(cb * ca))
+            * (np.cosh(ca) + np.cosh(ca * (2.0e0 * cb - 1.0e0)))
+            / (2.0 * np.sinh(ca))
+        )
+
+        return ss
+
+    # def _sf12(self, sigma: DataArray) -> DataArray:
+    #    """
+    #    Siddorn and Furner 2012 analytical stretching
+    #    function for terrain-following s-coordinates.
+    #
+    #    Reference:
+    #        Siddorn & Furner, Oce. Mod. 66:1-13, 2013.
+
+    #    Parameters
+    #    ----------
+    #    sigma: DataArray
+    #        Uniform non-dimensional sigma-coordinate:
+    #        MUST BE positive, i.e. 0 <= sigma <= 1
+    #
+    #    Returns
+    #    -------
+    #    DataArray
+    #        Stretched coordinate
+    #    """
