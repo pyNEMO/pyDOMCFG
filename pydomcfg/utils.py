@@ -2,9 +2,6 @@
 Utilities
 """
 
-import warnings
-
-# from itertools import product
 from typing import Hashable, Iterable, Iterator, Optional
 
 import numpy as np
@@ -89,8 +86,8 @@ def _smooth_MB06(
     max_iter: int = 10_000,
 ) -> DataArray:
     """
-    This is NEMO implementation of the direct iterative method
-    of Martinho and Batteen (2006).
+    Direct iterative method of Martinho and Batteen (2006) consistent
+    with NEMO implementation.
 
     The algorithm ensures that
 
@@ -107,7 +104,7 @@ def _smooth_MB06(
     Parameters
     ----------
     depth: DataArray
-        Bottom depth (units: m).
+        Bottom depth.
     rmax: float
         Maximum slope parameter allowed
     tol: float, default = 1.0e-8
@@ -119,7 +116,7 @@ def _smooth_MB06(
     -------
     DataArray
         Smooth version of the bottom topography with
-        a maximum slope parameter < rmax (units: m).
+        a maximum slope parameter < rmax.
     """
 
     # Set scaling factor used for smoothing
@@ -140,8 +137,8 @@ def _smooth_MB06(
             zenv_p1 = zenv.shift({dim: +1})
 
             # Compute zr
-            mb06 = (zenv_m1 - zenv) / (zenv_m1 + zenv)
-            zr = mb06.where((zenv > 0) & (zenv_m1 > 0), 0)
+            zr = (zenv_m1 - zenv) / (zenv_m1 + zenv)
+            zr = zr.where((zenv > 0) & (zenv_m1 > 0), 0)
             for dim_name in zenv.dims:
                 zr[{dim_name: -1}] = 0
             all_zr += [zr]
@@ -159,12 +156,11 @@ def _smooth_MB06(
         if ((np.abs(zr) - rmax) <= tol).all():
             return zenv
 
-    # TODO:
-    #   Warning or error?
-    warnings.warn(
+    raise ValueError(
         "Iterative method did NOT converge."
         " You might want to increase the number of iterations and/or the tolerance."
     )
+
     return zenv
 
 
