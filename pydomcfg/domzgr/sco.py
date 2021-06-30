@@ -229,7 +229,7 @@ class Sco(Zgr):
                 su = -sigma
                 ss = self._stretch_sco(-sigma)
                 a1 = scosrf
-                a2 = 0.0
+                a2 = DataArray((0.0))  # TODO: Why can't use float here?
                 a3 = self._envlp
                 if self._stretch != "sf12":
                     a2 += self._hc
