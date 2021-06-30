@@ -161,8 +161,6 @@ def _smooth_MB06(
         " You might want to increase the number of iterations and/or the tolerance."
     )
 
-    return zenv
-
 
 def generate_cartesian_grid(
     ppe1_m,
