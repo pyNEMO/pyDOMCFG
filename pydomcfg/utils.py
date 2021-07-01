@@ -118,7 +118,7 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
         "cn_": str,
         "sn_": [str, int, str, bool, bool, str, str, str, str],
         "jp": int,
-        "pp": (float, int, type(None)),
+        "pp": (type(None), int, float),
         "cp": str,
     }
 
@@ -150,7 +150,8 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
         if not isinstance(_maybe_to_int(val), key_type):
             raise TypeError(
                 f"Value does not match expected types for {key!r}."
-                f"\nValue: {val!r}\nExpected types: {key_type}"
+                f"\nValue: {val!r}\nType: {type(val)}"
+                f"\nExpected types: {key_type}"
             )
 
         # Check list of values
@@ -159,7 +160,8 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
             if len(val) != len(val_types):
                 raise ValueError(
                     f"Mismatch in number of values provided for {key!r}."
-                    f"\nValues: {val}\nExpected length: {len(val_types)}"
+                    f"\nValues: {val}\nLength: {len(val)}"
+                    f"\nExpected length: {len(val_types)}"
                 )
 
             # Check type of each element
@@ -167,5 +169,6 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
                 if not isinstance(_maybe_to_int(v), v_type):
                     raise TypeError(
                         f"Values do not match expected types for {key!r}."
-                        f"\nValues: {val}\nExpected types: {val_types}"
+                        f"\nValues: {val}\nTypes: {list(map(type, val))}"
+                        f"\nExpected types: {val_types}"
                     )

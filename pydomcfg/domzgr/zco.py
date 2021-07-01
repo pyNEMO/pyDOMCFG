@@ -98,7 +98,7 @@ class Zco(Zgr):
            Zenodo. http://doi.org/10.5281/zenodo.3878122
         """
 
-        _check_namelist_entries(locals())
+        _check_namelist_entries({k: v for k, v in locals().items() if k != "self"})
 
         # Init
         self._ppdzmin = ppdzmin
