@@ -30,7 +30,6 @@ class Zco(Zgr):
         ppa2: Optional[float] = None,
         ppkth2: Optional[float] = None,
         ppacr2: Optional[float] = None,
-        ldbletanh: Optional[bool] = None,
         ln_e3_dep: bool = True,
     ) -> Dataset:
         """
@@ -56,11 +55,6 @@ class Zco(Zgr):
         ppa2, ppkth2, ppacr2: float, optional
             Double tanh stretching function parameters.
             (None: Double tanh OFF)
-        ldbletanh: bool, optional
-            Logical flag to switch ON/OFF the double tanh stretching function.
-            This flag is only needed for compatibility with NEMO DOMAINcfg tools.
-            Just set ``ppa2``, ``ppkth2``, and ``ppacr2`` to switch ON
-            the double tanh stretching function.
         ln_e3_dep: bool, default = True
             Logical flag to comp. e3 as fin. diff. (True) oranalyt. (False)
             (default = True)
@@ -116,7 +110,7 @@ class Zco(Zgr):
 
         # Set double tanh flag and coefficients (dummy floats when double tanh is OFF)
         pp2_in = (ppa2, ppkth2, ppacr2)
-        self._ldbletanh, pp2_out = self._get_ldbletanh_and_pp2(ldbletanh, pp2_in)
+        self._add_tanh2, pp2_out = self._set_add_tanh2_and_pp2(pp2_in)
         self._ppa2, self._ppkth2, self._ppacr2 = pp2_out
 
         # Initialize stretching coefficients (dummy floats for uniform case)
@@ -173,7 +167,7 @@ class Zco(Zgr):
         return (ppsur_out, ppa0_out, ppa1_out)
 
     # --------------------------------------------------------------------------
-    def _stretch_zco(self, sigma: DataArray, ldbletanh: bool = False) -> DataArray:
+    def _stretch_zco(self, sigma: DataArray, use_tanh2: bool = False) -> DataArray:
         """
         Provide the generalised analytical stretching function for NEMO z-coordinates.
 
@@ -182,7 +176,7 @@ class Zco(Zgr):
         sigma: DataArray
             Uniform non-dimensional sigma-coordinate:
             MUST BE positive, i.e. 0 <= sigma <= 1
-        ldbletanh: bool
+        use_tanh2: bool
             True only if used to compute the double tanh stretching
 
         Returns
@@ -193,7 +187,7 @@ class Zco(Zgr):
 
         kk = sigma * (self._jpk - 1.0) + 1.0
 
-        if ldbletanh:
+        if use_tanh2:
             # Double tanh
             kth = self._ppkth2
             acr = self._ppacr2
@@ -231,9 +225,9 @@ class Zco(Zgr):
                 a3 = self._ppa1 * self._ppacr
             z3 = self._compute_z3(su, s1, a1, a2, a3)
 
-            if self._ldbletanh:
+            if self._add_tanh2:
                 # Add double tanh term
-                ss2 = self._stretch_zco(-sigma, self._ldbletanh)
+                ss2 = self._stretch_zco(-sigma, self._add_tanh2)
                 a4 = self._ppa2 * self._ppacr2
                 z3 += ss2 * a4
 
@@ -267,7 +261,7 @@ class Zco(Zgr):
             tanh1 = np.tanh((kk - self._ppkth) / self._ppacr)
             e3 = a0 + a1 * tanh1
 
-            if self._ldbletanh:
+            if self._add_tanh2:
                 # Add double tanh term
                 a2 = self._ppa2
                 tanh2 = np.tanh((kk - self._ppkth2) / self._ppacr2)
@@ -277,41 +271,27 @@ class Zco(Zgr):
 
         return tuple(both_e3)
 
-    def _get_ldbletanh_and_pp2(
-        self, ldbletanh: Optional[bool], pp2: Tuple[Optional[float], ...]
+    def _set_add_tanh2_and_pp2(
+        self, pp2: Tuple[Optional[float], ...]
     ) -> Tuple[bool, Tuple[float, ...]]:
         """
-        If ldbletanh is None, its bool value is inferred from pp2.
+        add_tanh2 is inferred from pp2.
         Return pp2=(0, 0, 0) when double tanh is switched off.
         """
 
         pp_are_none = tuple(pp is None for pp in pp2)
         prefix_msg = "ppa2, ppkth2 and ppacr2"
-        ldbletanh_out = ldbletanh if (ldbletanh is not None) else not any(pp_are_none)
 
-        # Warnings: Ignore double tanh coeffiecients
-        if ldbletanh_out and self._is_uniform:
-            # Uniform and double tanh
-            warning_msg = (
+        # Ignore double tanh coeffiecients
+        if not all(pp_are_none) and self._is_uniform:
+            warnings.warn(
                 "Uniform grid case (no stretching):"
                 f" {prefix_msg} are ignored when ppacr == ppkth == 0"
             )
-        elif ldbletanh is False and not all(pp_are_none):
-            # ldbletanh False and double tanh coefficients specified
-            warning_msg = f"{prefix_msg} are ignored when ldbletanh is False"
-        else:
-            # All good
-            warning_msg = ""
-
-        if warning_msg:
-            # Warn and return dummy values
-            warnings.warn(warning_msg)
             return (False, (0, 0, 0))
 
-        # Errors: pp have inconsistent types
-        if ldbletanh is True and any(pp_are_none):
-            raise ValueError(f"{prefix_msg} MUST be all float when ldbletanh is True")
-        if ldbletanh is None and (any(pp_are_none) and not all(pp_are_none)):
+        # pp must be all not or float
+        if any(pp_are_none) and not all(pp_are_none):
             raise ValueError(f"{prefix_msg} MUST be all None or all float")
 
-        return (ldbletanh_out, tuple(pp or 0 for pp in pp2))
+        return (not any(pp_are_none), tuple(pp or 0 for pp in pp2))

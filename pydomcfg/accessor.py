@@ -154,4 +154,8 @@ class Accessor:
                 f" {mutually_exclusive}"
             )
 
+        if not chained.get("ldbletanh"):
+            for pp in ["ppa2", "ppkth2", "ppacr2"]:
+                chained[pp] = None
+
         return chained
