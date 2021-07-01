@@ -112,23 +112,29 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
     # TODO:
     #   I haven't really tested this
     prefix_type_mapper = {
-        "ln": bool,
-        "nn": int,
-        "rn": (int, float),
-        "cn": str,
-        "sn": [str, int, str, bool, bool, str, str, str, str],
-    }
-
-    entries_mapper = {
-        key: value
-        for key, value in entries_mapper.items()
-        if any(key.startswith(prefix + "_") for prefix in prefix_type_mapper)
+        "ln_": bool,
+        "nn_": int,
+        "rn_": (int, float),
+        "cn_": str,
+        "sn_": [str, int, str, bool, bool, str, str, str, str],
+        "jp": int,
+        "pp": (float, int, type(None)),
+        "cp": str,
     }
 
     for key, val in entries_mapper.items():
 
+        # Find matching keys
+        for prefix, maybe_key_type in prefix_type_mapper.items():
+            if key.startswith(prefix):
+                # Found a match!
+                break
+        else:
+            # No match, skip key
+            continue
+
         # Get expected types
-        maybe_key_type = prefix_type_mapper[key[:2]]
+        maybe_key_type = prefix_type_mapper[prefix]
         if isinstance(maybe_key_type, (type, tuple)):
             # Single type or tuple of types
             key_type = maybe_key_type
