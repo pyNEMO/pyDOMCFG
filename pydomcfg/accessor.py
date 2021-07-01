@@ -8,7 +8,6 @@ import xarray as xr
 from xarray import Dataset
 
 from .domzgr.zco import Zco
-from .utils import _check_namelist_entries
 
 try:
     import f90nml
@@ -106,8 +105,6 @@ class Accessor:
             for key in parameters
             if key != "self"
         }
-
-        _check_namelist_entries(kwargs)
 
         # TODO:
         #   mypy fails here because we convert all 999999 to None,

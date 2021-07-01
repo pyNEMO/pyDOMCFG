@@ -8,6 +8,7 @@ from typing import Optional, Tuple
 import numpy as np
 from xarray import DataArray, Dataset
 
+from ..utils import _check_namelist_entries
 from .zgr import Zgr
 
 
@@ -102,6 +103,8 @@ class Zco(Zgr):
            Notes Du Pôle De Modélisation De L'institut Pierre-simon Laplace (IPSL).
            Zenodo. http://doi.org/10.5281/zenodo.3878122
         """
+
+        _check_namelist_entries(locals())
 
         # Init
         self._ppdzmin = ppdzmin
