@@ -274,10 +274,7 @@ class Zco(Zgr):
     def _set_add_tanh2_and_pp2(
         self, pp2: Tuple[Optional[float], ...]
     ) -> Tuple[bool, Tuple[float, ...]]:
-        """
-        add_tanh2 is inferred from pp2.
-        Return pp2=(0, 0, 0) when double tanh is switched off.
-        """
+        """Infer add_tanh2 from pp2. Switch OFF tanh2 when using uniform grid"""
 
         pp_are_none = tuple(pp is None for pp in pp2)
         prefix_msg = "ppa2, ppkth2 and ppacr2"
