@@ -1,6 +1,5 @@
-import xarray as xr
-
 import pooch
+import xarray as xr
 
 bathymeter_mo_ps43 = xr.open_dataset(
     pooch.retrieve(
