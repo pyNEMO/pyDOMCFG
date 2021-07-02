@@ -65,10 +65,10 @@ def test_check_namelist_entries():
 
     error_match = (
         "Mismatch in number of values provided for 'sn_test'."
-        "\nValues: \\[1\\]\nNumber of values: 1\nExpected number of values: 9"
+        "\nValues: \\[None\\]\nNumber of values: 1\nExpected number of values: 9"
     )
     with pytest.raises(ValueError, match=error_match):
-        _check_namelist_entries({"sn_test": [1]})
+        _check_namelist_entries({"sn_test": [None]})
 
     error_match = (
         "Values do not match expected types for 'sn_test'."
