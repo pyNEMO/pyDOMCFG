@@ -1,6 +1,7 @@
 import inspect
 import warnings
 from collections import ChainMap
+from functools import wraps
 from pathlib import Path
 from typing import IO, Any, Callable, TypeVar, Union, cast
 
@@ -24,6 +25,7 @@ def _jpk_check(func: F) -> F:
     Decorator to raise an error if jpk was not set
     """
 
+    @wraps(func)
     def wrapper(self, *args, **kwargs):
         if not self.jpk:
             raise ValueError(
@@ -154,7 +156,7 @@ class Accessor:
                 f" {mutually_exclusive}"
             )
 
-        if not chained.get("ldbletanh"):
+        if chained.get("ldbletanh") is False:
             for pp in ["ppa2", "ppkth2", "ppacr2"]:
                 chained[pp] = None
 

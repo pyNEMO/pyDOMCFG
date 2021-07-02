@@ -8,7 +8,7 @@ from typing import Optional, Tuple
 import numpy as np
 from xarray import DataArray, Dataset
 
-from ..utils import _check_namelist_entries
+from ..utils import _check_parameters
 from .zgr import Zgr
 
 
@@ -18,6 +18,7 @@ class Zco(Zgr):
     """
 
     # --------------------------------------------------------------------------
+    @_check_parameters
     def __call__(
         self,
         ppdzmin: float,
@@ -97,8 +98,6 @@ class Zco(Zgr):
            Notes Du Pôle De Modélisation De L'institut Pierre-simon Laplace (IPSL).
            Zenodo. http://doi.org/10.5281/zenodo.3878122
         """
-
-        _check_namelist_entries({k: v for k, v in locals().items() if k != "self"})
 
         # Init
         self._ppdzmin = ppdzmin

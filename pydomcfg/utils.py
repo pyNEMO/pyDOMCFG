@@ -2,11 +2,16 @@
 Utilities
 """
 
-from typing import Any, Mapping, Optional
+import inspect
+from collections import ChainMap
+from functools import wraps
+from typing import Any, Callable, Mapping, Optional, TypeVar, cast
 
 import numpy as np
 import xarray as xr
 from xarray import DataArray, Dataset
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def generate_cartesian_grid(
@@ -108,9 +113,9 @@ def _maybe_to_int(value: Any) -> Any:
 
 def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
 
+    # TODO: Make it public until we import from nml_meld?
+
     # Rudimentary checks on namelist entries.
-    # TODO:
-    #   I haven't really tested this
     prefix_type_mapper = {
         "ln_": bool,
         "nn_": int,
@@ -134,7 +139,6 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
             continue
 
         # Get expected types
-        maybe_key_type = prefix_type_mapper[prefix]
         if isinstance(maybe_key_type, (type, tuple)):
             # Single type or tuple of types
             key_type = maybe_key_type
@@ -160,8 +164,8 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
             if len(val) != len(val_types):
                 raise ValueError(
                     f"Mismatch in number of values provided for {key!r}."
-                    f"\nValues: {val}\nLength: {len(val)}"
-                    f"\nExpected length: {len(val_types)}"
+                    f"\nValues: {val}\nNumber of values: {len(val)}"
+                    f"\nExpected number of values: {len(val_types)}"
                 )
 
             # Check type of each element
@@ -172,3 +176,27 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
                         f"\nValues: {val}\nTypes: {list(map(type, val))}"
                         f"\nExpected types: {val_types}"
                     )
+
+
+def _check_parameters(func: F) -> F:
+    """
+    Decorator to check whether parameter names & types follow NEMO conventions.
+    To be used with class methods.
+    """
+
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+
+        # Combine args and kwargs
+        parameters = inspect.signature(func).parameters
+        argnames = iter(list(parameters)[1:])  # [1:] so we exclude self
+        try:
+            args_and_kwargs = ChainMap({next(argnames): arg for arg in args}, kwargs)
+        except StopIteration:
+            # Too many arguments! Let func handle the error
+            return func(self, *args, **kwargs)
+
+        _check_namelist_entries(args_and_kwargs)
+        return func(self, *args, **kwargs)
+
+    return cast(F, wrapper)
