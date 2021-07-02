@@ -142,6 +142,7 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
                     if isinstance(key_type_or_val_types, list)
                     else []
                 )
+                break
         else:
             # No match found
             continue
