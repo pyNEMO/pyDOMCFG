@@ -3,9 +3,10 @@ Utilities
 """
 
 import inspect
+import re
 from collections import ChainMap
 from functools import wraps
-from typing import Any, Callable, Mapping, Optional, TypeVar, cast
+from typing import Any, Callable, Mapping, Optional, Tuple, TypeVar, Union, cast
 
 import numpy as np
 import xarray as xr
@@ -116,7 +117,7 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
     # TODO: Make it public until we import from nml_meld?
 
     # Rudimentary checks on namelist entries.
-    prefix_type_mapper = {
+    prefix_mapper = {
         "ln_": bool,
         "nn_": int,
         "rn_": (int, float),
@@ -129,52 +130,53 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
 
     for key, val in entries_mapper.items():
 
-        # Find matching keys
-        for prefix, maybe_key_type in prefix_type_mapper.items():
+        for prefix, key_type_or_val_types in prefix_mapper.items():
             if key.startswith(prefix):
-                # Found a match!
-                break
+                key_type = (
+                    key_type_or_val_types
+                    if isinstance(key_type_or_val_types, (type, tuple))
+                    else type(key_type_or_val_types)
+                )
+                val_types = (
+                    key_type_or_val_types
+                    if isinstance(key_type_or_val_types, list)
+                    else []
+                )
         else:
-            # No match, skip key
+            # No match found
             continue
 
-        # Get expected types
-        if isinstance(maybe_key_type, (type, tuple)):
-            # Single type or tuple of types
-            key_type = maybe_key_type
-            val_types = None
-        elif isinstance(maybe_key_type, list):
-            # Lists like "sn_"
-            key_type = type(maybe_key_type)
-            val_types = maybe_key_type
-        else:
-            raise NotImplementedError
+        def _types_to_str(
+            type_or_tuple: Union[type, Tuple[type, ...]]
+        ) -> Union[str, Tuple[str, ...]]:
+            """Return string(s) of type(s) to print"""
+            matches = re.findall(r"\'(.+?)\'", str(type_or_tuple))
+            return tuple(matches) if isinstance(type_or_tuple, tuple) else matches[0]
 
-        # Check key type
         if not isinstance(_maybe_to_int(val), key_type):
             raise TypeError(
                 f"Value does not match expected types for {key!r}."
-                f"\nValue: {val!r}\nType: {type(val)}"
-                f"\nExpected types: {key_type}"
+                f"\nValue: {val!r}\nType: {_types_to_str(type(val))!r}"
+                f"\nExpected types: {_types_to_str(key_type)!r}"
             )
 
-        # Check list of values
         if val_types:
-            # Check length
+            # Check list items
+
             if len(val) != len(val_types):
                 raise ValueError(
                     f"Mismatch in number of values provided for {key!r}."
-                    f"\nValues: {val}\nNumber of values: {len(val)}"
-                    f"\nExpected number of values: {len(val_types)}"
+                    f"\nValues: {val!r}\nNumber of values: {len(val)!r}"
+                    f"\nExpected number of values: {len(val_types)!r}"
                 )
 
-            # Check type of each element
             for v, v_type in zip(val, val_types):
                 if not isinstance(_maybe_to_int(v), v_type):
                     raise TypeError(
                         f"Values do not match expected types for {key!r}."
-                        f"\nValues: {val}\nTypes: {list(map(type, val))}"
-                        f"\nExpected types: {val_types}"
+                        f"\nValues: {val!r}"
+                        f"\nTypes: {list(map(_types_to_str, [type(v) for v in val]))!r}"
+                        f"\nExpected types: {list(map(_types_to_str, val_types))!r}"
                     )
 
 
