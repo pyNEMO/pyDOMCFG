@@ -2,6 +2,7 @@ name: pydomcfg_test_dev
 channels:
   - conda-forge
 dependencies:
+  - pooch
   - pytest-cov
   - pytest
   - pytest-xdist
