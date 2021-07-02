@@ -1,6 +1,5 @@
-import xarray as xr
-
 import pooch
+import xarray as xr
 
 BASE_URL = "https://github.com/pyNEMO/sample-datasets/raw/main"
 
