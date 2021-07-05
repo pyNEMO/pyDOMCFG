@@ -3,9 +3,10 @@ Tests for utils module
 """
 
 import numpy as np
+import pytest
 import xarray as xr
 
-from pydomcfg.utils import generate_cartesian_grid
+from pydomcfg.utils import _check_namelist_entries, generate_cartesian_grid
 
 
 def test_generate_cartesian_grid():
@@ -50,3 +51,32 @@ def test_generate_cartesian_grid():
     # nav_lon, nav_lat
     for expected, actual in zip(["glamt", "gphit"], ["nav_lon", "nav_lat"]):
         xr.testing.assert_equal(ds[expected], ds[actual])
+
+
+def test_check_namelist_entries():
+
+    error_match = (
+        "Value does not match expected types for 'pptest'."
+        "\nValue: 'wrong'\nType: 'str'"
+        "\nExpected types: \\('NoneType', 'int', 'float'\\)"
+    )
+    with pytest.raises(TypeError, match=error_match):
+        _check_namelist_entries({"pptest": "wrong"})
+
+    error_match = (
+        "Mismatch in number of values provided for 'sn_test'."
+        "\nValues: \\[None\\]\nNumber of values: 1\nExpected number of values: 9"
+    )
+    with pytest.raises(ValueError, match=error_match):
+        _check_namelist_entries({"sn_test": [None]})
+
+    error_match = (
+        "Values do not match expected types for 'sn_test'."
+        "\nValues: \\[None, None, None, None, None, None, None, None, None\\]"
+        "\nTypes: \\['NoneType', 'NoneType', 'NoneType', 'NoneType', 'NoneType',"
+        " 'NoneType', 'NoneType', 'NoneType', 'NoneType'\\]"
+        "\nExpected types:"
+        " \\['str', 'int', 'str', 'bool', 'bool', 'str', 'str', 'str', 'str'\\]"
+    )
+    with pytest.raises(TypeError, match=error_match):
+        _check_namelist_entries({"sn_test": [None] * 9})

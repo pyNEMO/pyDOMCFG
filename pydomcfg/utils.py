@@ -2,24 +2,16 @@
 Utilities
 """
 
-from typing import Hashable, Iterable, Iterator, Optional
+import inspect
+from collections import ChainMap
+from functools import wraps
+from typing import Any, Callable, Mapping, Optional, Tuple, TypeVar, Union, cast
 
 import numpy as np
 import xarray as xr
 from xarray import DataArray, Dataset
 
-NEMO_NONE = 999_999
-
-
-def _is_nemo_none(var: Hashable) -> bool:
-    """Assess if a NEMO parameter is None"""
-    return (var or NEMO_NONE) == NEMO_NONE
-
-
-def _are_nemo_none(var: Iterable) -> Iterator[bool]:
-    """Iterate over namelist parameters and assess if they are None"""
-    for v in var:
-        yield _is_nemo_none(v)
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def generate_cartesian_grid(
@@ -110,3 +102,111 @@ def generate_cartesian_grid(
     ds = ds.transpose(*("y", "x"))
 
     return ds.set_coords(ds.variables)
+
+
+def _maybe_float_to_int(value: Any) -> Any:
+    """Convert floats that are integers"""
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
+def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
+    """
+    Check whether namelist entries follow NEMO convention for names and types
+
+    Parameters
+    ----------
+    entries_mapper: Mapping
+        Object mapping entry names to their values.
+
+    Notes
+    -----
+    This function does not accept nested objects.
+    I.e., namelist blocks must be chained first.
+    """
+
+    prefix_mapper = {
+        # Use tuple if multiple types are allowed.
+        # Use lists to specify types allowed for each list item.
+        "ln_": bool,
+        "nn_": int,
+        "rn_": (int, float),
+        "cn_": str,
+        "sn_": [str, int, str, bool, bool, str, str, str, str],
+        "jp": int,
+        "pp": (type(None), int, float),
+        "cp": str,
+    }
+
+    def _type_names(
+        type_or_tuple: Union[type, Tuple[type, ...]]
+    ) -> Union[str, Tuple[str, ...]]:
+        """Return type name(s) for a pretty print"""
+        if isinstance(type_or_tuple, tuple):
+            return tuple(type_class.__name__ for type_class in type_or_tuple)
+        return type_or_tuple.__name__
+
+    for key, val in entries_mapper.items():
+
+        for prefix, val_type_or_list_of_types in prefix_mapper.items():
+            if key.startswith(prefix):
+                val_type = (
+                    val_type_or_list_of_types
+                    if isinstance(val_type_or_list_of_types, (type, tuple))
+                    else list
+                )
+                list_of_types = (
+                    val_type_or_list_of_types
+                    if isinstance(val_type_or_list_of_types, list)
+                    else []
+                )
+                break
+        else:
+            # No match found
+            continue
+
+        val_int = _maybe_float_to_int(val)
+        if not isinstance(val_int, val_type):
+            raise TypeError(
+                f"Value does not match expected types for {key!r}."
+                f"\nValue: {val!r}"
+                f"\nType: {_type_names(type(val_int))!r}"
+                f"\nExpected types: {_type_names(val_type)!r}"
+            )
+
+        if list_of_types:
+
+            if len(val) != len(list_of_types):
+                raise ValueError(
+                    f"Mismatch in number of values provided for {key!r}."
+                    f"\nValues: {val!r}\nNumber of values: {len(val)!r}"
+                    f"\nExpected number of values: {len(list_of_types)!r}"
+                )
+
+            val_int = list(map(_maybe_float_to_int, val))
+            if not all(map(isinstance, val_int, list_of_types)):
+                raise TypeError(
+                    f"Values do not match expected types for {key!r}."
+                    f"\nValues: {val!r}"
+                    f"\nTypes: {list(map(_type_names, map(type, val_int)))!r}"
+                    f"\nExpected types: {list(map(_type_names, list_of_types))!r}"
+                )
+
+
+def _check_parameters(func: F) -> F:
+    """
+    Decorator to check whether parameter names & types follow NEMO conventions.
+    To be used with class methods.
+    """
+
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        argnames = list(inspect.signature(func).parameters)
+        argnames.remove("self")
+        args_dict = {name: arg for name, arg in zip(argnames, args)}
+        args_and_kwargs = ChainMap(args_dict, kwargs)
+        _check_namelist_entries(args_and_kwargs)
+        return func(self, *args, **kwargs)
+
+    return cast(F, wrapper)

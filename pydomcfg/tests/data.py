@@ -2,6 +2,7 @@
 Test data
 """
 import numpy as np
+import pooch
 
 # Results to replicate:
 # ORCA2 zco model levels depth and vertical
@@ -42,4 +43,74 @@ ORCA2_VGRID = np.array(
         [4749.9133, 4500.0215, 500.0000, 499.5419],
         [5250.2266, 5000.0000, 500.5646, 500.3288],
     ]
+)
+
+# See pag 62 of v3.6 manual for the input parameters
+# TODO:
+#    ppdzmin and pphmax in NEMO DOMAINcfg README are actually 999999,
+#    a dummy value is assigned but it's a temporary workaround.
+#    See: https://github.com/pyNEMO/pyDOMCFG/issues/44
+ORCA2_NAMELIST = """
+!-----------------------------------------------------------------------
+&namcfg        !   parameters of the configuration
+!-----------------------------------------------------------------------
+   !
+   ln_e3_dep   = .false.   ! =T : e3=dk[depth] in discret sens.
+   !                       !      ===>>> will become the only possibility in v4.0
+   !                       ! =F : e3 analytical derivative of depth function
+   !                       !      only there for backward compatibility test with v3.6
+   !                       !
+   cp_cfg      =  "orca"   !  name of the configuration
+   jp_cfg      =       2   !  resolution of the configuration
+   jpidta      =     180   !  1st lateral dimension ( >= jpi )
+   jpjdta      =     148   !  2nd    "         "    ( >= jpj )
+   jpkdta      =      31   !  number of levels      ( >= jpk )
+   Ni0glo      =     180   !  1st dimension of global domain --> i =jpidta
+   Nj0glo      =     148   !  2nd    -                  -    --> j  =jpjdta
+   jpkglo      =      31
+   jperio      =       4   !  lateral cond. type (between 0 and 6)
+   ln_use_jattr = .false.  !  use (T) the file attribute: open_ocean_jstart, if present
+                           !  in netcdf input files, as the start j-row for reading
+   ln_domclo = .false.     ! computation of closed sea masks (see namclo)
+/
+!-----------------------------------------------------------------------
+&namdom        !
+!-----------------------------------------------------------------------
+   jphgr_msh   =       0               !  type of horizontal mesh
+   ppglam0     =  999999.0             !  longitude of first raw and column T-point (jphgr_msh = 1)
+   ppgphi0     =  999999.0             ! latitude  of first raw and column T-point (jphgr_msh = 1)
+   ppe1_deg    =  999999.0             !  zonal      grid-spacing (degrees)
+   ppe2_deg    =  999999.0             !  meridional grid-spacing (degrees)
+   ppe1_m      =  999999.0             !  zonal      grid-spacing (degrees)
+   ppe2_m      =  999999.0             !  meridional grid-spacing (degrees)
+   ppsur       =   -4762.96143546300   !  ORCA r4, r2 and r05 coefficients
+   ppa0        =     255.58049070440   ! (default coefficients)
+   ppa1        =     245.58132232490   !
+   ppkth       =      21.43336197938   !
+   ppacr       =       3.0             !
+   ppdzmin     =      10.0             !  Minimum vertical spacing
+   pphmax      =    5000.0             !  Maximum depth
+   ldbletanh   =  .FALSE.              !  Use/do not use double tanf function for vertical coordinates
+   ppa2        =  999999.0             !  Double tanh function parameters
+   ppkth2      =  999999.0             !
+   ppacr2      =  999999.0             !
+/
+!-----------------------------------------------------------------------
+&namzgr        !   vertical coordinate                                  (default: NO selection)
+!-----------------------------------------------------------------------
+   ln_zco      = .true.    !  z-coordinate - full    steps
+   ln_zps      = .false.   !  z-coordinate - partial steps
+   ln_sco      = .false.   !  s- or hybrid z-s-coordinate
+   ln_isfcav   = .false.   !  ice shelf cavity
+   ln_linssh   = .false.   !  linear free surface
+/
+"""
+
+
+NML_REF_PATH = pooch.retrieve(
+    url=(
+        "https://forge.ipsl.jussieu.fr/nemo/svn/utils/tools_r4.0-HEAD/DOMAINcfg/"
+        "namelist_ref?p=12672"
+    ),
+    known_hash="cd6a13cd1cd2c97aff3905a482babd79b9449293a269018e7d30b868fc22fe35",
 )

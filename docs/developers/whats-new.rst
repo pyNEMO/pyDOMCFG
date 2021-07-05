@@ -1,4 +1,4 @@
-.. currentmodule:: pydomcfg
+.. currentmodule:: xarray
 
 What's New
 ----------
@@ -6,6 +6,8 @@ What's New
 Unreleased
 ==========
 
+- Introduced :py:meth:`Dataset.domcfg.from_namelist` to use
+  ``NEMO DOMAINcfg`` namelists (:pr:`43`)
 - Introduced the ``domcfg`` accessor (:pr:`36`)
 - Added :py:meth:`~pydomcfg.tests.bathymetry.Bathymetry.sea_mount`
   useful to generate classic sea mount test case. (:pr:`17`)
