@@ -21,6 +21,7 @@ Methods
    :toctree: generated/
    :template: autosummary/accessor_method.rst
 
+    Dataset.domcfg.from_namelist
     Dataset.domcfg.zco
 
 Domzgr
