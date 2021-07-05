@@ -3,7 +3,6 @@ Utilities
 """
 
 import inspect
-import re
 from collections import ChainMap
 from functools import wraps
 from typing import Any, Callable, Mapping, Optional, Tuple, TypeVar, Union, cast
@@ -105,7 +104,7 @@ def generate_cartesian_grid(
     return ds.set_coords(ds.variables)
 
 
-def _maybe_to_int(value: Any) -> Any:
+def _maybe_float_to_int(value: Any) -> Any:
     """Convert floats that are integers"""
     if isinstance(value, float) and value.is_integer():
         return int(value)
@@ -113,11 +112,23 @@ def _maybe_to_int(value: Any) -> Any:
 
 
 def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
+    """
+    Check whether namelist entries follow NEMO convention for names and types
 
-    # TODO: Make it public until we import from nml_meld?
+    Parameters
+    ----------
+    entries_mapper: Mapping
+        Object mapping entry names to their values.
 
-    # Rudimentary checks on namelist entries.
+    Notes
+    -----
+    This function does not accept nested objects.
+    I.e., namelist blocks must be chained first.
+    """
+
     prefix_mapper = {
+        # Use tuple if multiple types are allowed.
+        # Use lists to specify types allowed for each list item.
         "ln_": bool,
         "nn_": int,
         "rn_": (int, float),
@@ -128,18 +139,26 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
         "cp": str,
     }
 
+    def _type_names(
+        type_or_tuple: Union[type, Tuple[type, ...]]
+    ) -> Union[str, Tuple[str, ...]]:
+        """Return type name(s) for a pretty print"""
+        if isinstance(type_or_tuple, tuple):
+            return tuple(type_class.__name__ for type_class in type_or_tuple)
+        return type_or_tuple.__name__
+
     for key, val in entries_mapper.items():
 
-        for prefix, key_type_or_val_types in prefix_mapper.items():
+        for prefix, val_type_or_list_of_types in prefix_mapper.items():
             if key.startswith(prefix):
-                key_type = (
-                    key_type_or_val_types
-                    if isinstance(key_type_or_val_types, (type, tuple))
-                    else type(key_type_or_val_types)
+                val_type = (
+                    val_type_or_list_of_types
+                    if isinstance(val_type_or_list_of_types, (type, tuple))
+                    else list
                 )
-                val_types = (
-                    key_type_or_val_types
-                    if isinstance(key_type_or_val_types, list)
+                list_of_types = (
+                    val_type_or_list_of_types
+                    if isinstance(val_type_or_list_of_types, list)
                     else []
                 )
                 break
@@ -147,38 +166,32 @@ def _check_namelist_entries(entries_mapper: Mapping[str, Any]):
             # No match found
             continue
 
-        def _types_to_str(
-            type_or_tuple: Union[type, Tuple[type, ...]]
-        ) -> Union[str, Tuple[str, ...]]:
-            """Return string(s) of type(s) to print"""
-            matches = re.findall(r"\'(.+?)\'", str(type_or_tuple))
-            return tuple(matches) if isinstance(type_or_tuple, tuple) else matches[0]
-
-        if not isinstance(_maybe_to_int(val), key_type):
+        val_int = _maybe_float_to_int(val)
+        if not isinstance(val_int, val_type):
             raise TypeError(
                 f"Value does not match expected types for {key!r}."
-                f"\nValue: {val!r}\nType: {_types_to_str(type(val))!r}"
-                f"\nExpected types: {_types_to_str(key_type)!r}"
+                f"\nValue: {val!r}"
+                f"\nType: {_type_names(type(val_int))!r}"
+                f"\nExpected types: {_type_names(val_type)!r}"
             )
 
-        if val_types:
-            # Check list items
+        if list_of_types:
 
-            if len(val) != len(val_types):
+            if len(val) != len(list_of_types):
                 raise ValueError(
                     f"Mismatch in number of values provided for {key!r}."
                     f"\nValues: {val!r}\nNumber of values: {len(val)!r}"
-                    f"\nExpected number of values: {len(val_types)!r}"
+                    f"\nExpected number of values: {len(list_of_types)!r}"
                 )
 
-            for v, v_type in zip(val, val_types):
-                if not isinstance(_maybe_to_int(v), v_type):
-                    raise TypeError(
-                        f"Values do not match expected types for {key!r}."
-                        f"\nValues: {val!r}"
-                        f"\nTypes: {list(map(_types_to_str, [type(v) for v in val]))!r}"
-                        f"\nExpected types: {list(map(_types_to_str, val_types))!r}"
-                    )
+            val_int = list(map(_maybe_float_to_int, val))
+            if not all(map(isinstance, val_int, list_of_types)):
+                raise TypeError(
+                    f"Values do not match expected types for {key!r}."
+                    f"\nValues: {val!r}"
+                    f"\nTypes: {list(map(_type_names, map(type, val_int)))!r}"
+                    f"\nExpected types: {list(map(_type_names, list_of_types))!r}"
+                )
 
 
 def _check_parameters(func: F) -> F:
@@ -189,16 +202,10 @@ def _check_parameters(func: F) -> F:
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-
-        # Combine args and kwargs
-        parameters = inspect.signature(func).parameters
-        argnames = iter(list(parameters)[1:])  # [1:] so we exclude self
-        try:
-            args_and_kwargs = ChainMap({next(argnames): arg for arg in args}, kwargs)
-        except StopIteration:
-            # Too many arguments! Let func handle the error
-            return func(self, *args, **kwargs)
-
+        argnames = list(inspect.signature(func).parameters)
+        argnames.remove("self")
+        args_dict = {name: arg for name, arg in zip(argnames, args)}
+        args_and_kwargs = ChainMap(args_dict, kwargs)
         _check_namelist_entries(args_and_kwargs)
         return func(self, *args, **kwargs)
 

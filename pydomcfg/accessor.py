@@ -18,6 +18,11 @@ except ImportError:
     HAS_F90NML = False
 
 F = TypeVar("F", bound=Callable[..., Any])
+ZGR_MAPPER = {
+    "ln_zco": Zco,
+    # "ln_zps": TODO,
+    # "ln_sco": TODO
+}
 
 
 def _jpk_check(func: F) -> F:
@@ -78,48 +83,42 @@ class Accessor:
         self._nml_ref_path = value
 
     # domzgr methods
+    # TODO:
+    #   I think the process of creating the public API and doc
+    #   can be further automatized, but let's not put too much effort into it
+    #   until we settle on the back-end structure:
+    #   See: https://github.com/pyNEMO/pyDOMCFG/issues/45
     @_jpk_check
     def zco(self, *args: Any, **kwargs: Any) -> Dataset:
-        return Zco(self._obj, self._jpk)(*args, **kwargs)
+        name = inspect.stack()[0][3]
+        return ZGR_MAPPER["ln_" + name](self._obj, self._jpk)(*args, **kwargs)
 
     zco.__doc__ = Zco.__call__.__doc__
 
     # Emulate NEMO DOMAINcfg tools
-    def from_namelist(self, nml_cfg_path_or_io: Union[str, Path, IO[str]]):
+    def from_namelist(self, nml_cfg_path_or_io: Union[str, Path, IO[str]]) -> Dataset:
         """
-        TODO
+        Auto-populate pydomcfg parameters using NEMO DOMAINcfg namelists.
+
+        Parameters
+        ----------
+        nml_cfg_path_or_io: str, Path, IO
+            Path pointing to a namelist_cfg,
+            or namelist_cfg previously opened with open()
+
+        Returns
+        -------
+        Dataset
         """
 
-        # Parse and return a ChainMap
-        nml = self._namelist_parser(nml_cfg_path_or_io)
-
-        # Pick zgr class
-        if nml["ln_zco"]:
-            zgr_class = Zco
-        else:
-            raise NotImplementedError("Only `Zco` has been implemented so far.")
-
-        # Inspect the __call__ signatures and get the approriate variables
-        # from the namelists. Replace 999999. with None
-        parameters = inspect.signature(zgr_class.__call__).parameters
-        kwargs = {
-            key: None if nml[key] == 999_999 else nml[key]
-            for key in parameters
-            if key != "self"
-        }
-
-        # TODO:
-        #   mypy fails here because we convert all 999999 to None,
-        #   even if the argument is not Optional.
-        #   I think we can just switch off the check: The code will eventually fail
-        #   at runtime, but that's because 999999 was used in a wrong place.
-        #   It's the same as running the python version using None with the
-        #   wrong argument.
-        return zgr_class(self._obj, nml["jpkdta"])(**kwargs)  # type: ignore
+        nml_chained = self._namelist_parser(nml_cfg_path_or_io)
+        zgr_initialized, kwargs = self._get_zgr_initialized_and_kwargs(nml_chained)
+        return zgr_initialized(**kwargs)
 
     def _namelist_parser(
         self, nml_cfg_path_or_io: Union[str, Path, IO[str]]
     ) -> ChainMap:
+        """Parse namelists using f90nml, chaining all namblocks"""
 
         if not HAS_F90NML:
             raise ImportError(
@@ -138,26 +137,38 @@ class Accessor:
             )
 
         # Read namelists: cfg overrides ref
-        # TODO:
-        #   If we specify the third argument, the resulting namelist is written
-        #   The advantage is that it is formatted as the reference namelist
-        #   We could do it to a tmp file, then add the resulting string to the
-        #   global attributes of the final dataset.
         nml_cfg = f90nml.read(nml_cfg_path_or_io)
         nml = f90nml.patch(self.nml_ref_path, nml_cfg)
 
-        # Chain all namblocks
-        chained = ChainMap(*nml.todict().values())
+        return ChainMap(*nml.todict().values())
 
-        mutually_exclusive = ("ln_zco", "ln_zps", "ln_sco")
-        if sum(chained.get(key) for key in mutually_exclusive) != 1:
+    def _get_zgr_initialized_and_kwargs(self, nml_chained: ChainMap):
+
+        # TODO: Add return type hint when abstraction in base class is implemented
+
+        # Pick the appropriate class
+        zgr_classes = [
+            value for key, value in ZGR_MAPPER.items() if nml_chained.get(key)
+        ]
+        if len(zgr_classes) != 1:
             raise ValueError(
-                "One and only one of the following variables MUST be set:"
-                f" {mutually_exclusive}"
+                "One and only one of the following variables MUST be `.true.`:"
+                f" {tuple(ZGR_MAPPER)}"
             )
+        zgr_class = zgr_classes[0]
 
-        if chained.get("ldbletanh") is False:
+        # Compatibility with NEMO DOMAINcfg
+        if nml_chained.get("ldbletanh") is False:
             for pp in ["ppa2", "ppkth2", "ppacr2"]:
-                chained[pp] = None
+                nml_chained[pp] = None
 
-        return chained
+        # Get kwargs, converting 999_999 to None
+        parameters = list(inspect.signature(zgr_class.__call__).parameters)
+        parameters.remove("self")
+        kwargs = {
+            key: None if nml_chained[key] == 999_999 else nml_chained[key]
+            for key in parameters
+            if key in nml_chained
+        }
+
+        return zgr_class(self._obj, nml_chained["jpkdta"]), kwargs

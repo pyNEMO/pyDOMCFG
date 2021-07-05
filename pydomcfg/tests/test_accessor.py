@@ -22,3 +22,16 @@ def test_jpk():
     # Has been set correctly.
     ds_bathy.domcfg.jpk = 1
     assert ds_bathy.domcfg.jpk == 1
+
+
+def test_nml_ref_path():
+    pytest.importorskip("f90nml")
+
+    # Initialize test class
+    ds_bathy = Bathymetry(1.0e3, 1.2e3, 1, 1).flat(5.0e3)
+
+    with pytest.raises(
+        ValueError,
+        match=r"Set `nml_ref_path` before calling `obj.domcfg.from_namelist\(\)`",
+    ):
+        ds_bathy.domcfg.from_namelist("dummy")

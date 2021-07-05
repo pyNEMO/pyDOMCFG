@@ -3,7 +3,6 @@ Tests for zco
 """
 
 from io import StringIO
-from urllib.request import urlretrieve
 
 import numpy as np
 import pytest
@@ -12,7 +11,7 @@ import xarray as xr
 import pydomcfg  # noqa: F401
 
 from .bathymetry import Bathymetry
-from .data import ORCA2_NAMELIST, ORCA2_VGRID
+from .data import NML_REF_PATH, ORCA2_NAMELIST, ORCA2_VGRID
 
 
 @pytest.mark.parametrize("from_namelist", (True, False))
@@ -31,15 +30,8 @@ def test_zco_orca2(from_namelist):
     if from_namelist:
         pytest.importorskip("f90nml")
 
-        # Retrieve reference namelist from NEMO v4.0.4 utils
-        nml_ref_url = (
-            "https://forge.ipsl.jussieu.fr/nemo/svn/utils/"
-            "tools_r4.0-HEAD/DOMAINcfg/namelist_ref?p=12672"
-        )
-        nml_ref_path, _ = urlretrieve(nml_ref_url)
-
         # Set reference namelist
-        ds_bathy.domcfg.nml_ref_path = nml_ref_path
+        ds_bathy.domcfg.nml_ref_path = NML_REF_PATH
 
         # Infer parameters from namelist
         dsz_an = ds_bathy.domcfg.from_namelist(StringIO(ORCA2_NAMELIST))

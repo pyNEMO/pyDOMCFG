@@ -2,6 +2,7 @@
 Test data
 """
 import numpy as np
+import pooch
 
 # Results to replicate:
 # ORCA2 zco model levels depth and vertical
@@ -104,3 +105,12 @@ ORCA2_NAMELIST = """
    ln_linssh   = .false.   !  linear free surface
 /
 """
+
+
+NML_REF_PATH = pooch.retrieve(
+    url=(
+        "https://forge.ipsl.jussieu.fr/nemo/svn/utils/tools_r4.0-HEAD/DOMAINcfg/"
+        "namelist_ref?p=12672"
+    ),
+    known_hash="cd6a13cd1cd2c97aff3905a482babd79b9449293a269018e7d30b868fc22fe35",
+)
