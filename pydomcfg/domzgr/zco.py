@@ -8,7 +8,7 @@ from typing import Optional, Tuple
 import numpy as np
 from xarray import DataArray, Dataset
 
-from ..utils import _check_parameters
+from ..utils import VerticalGridTuple, _check_parameters
 from .zgr import Zgr
 
 
@@ -202,12 +202,12 @@ class Zco(Zgr):
     def _zco_z3(self) -> Tuple[DataArray, ...]:
         """Compute and return z3{t,w} for z-coordinates grids"""
 
-        grids = ("T", "W")
+        top_are_zero = VerticalGridTuple(t=False, w=True)
         sigmas = self._sigmas
         sigmas_p1 = self._compute_sigma(self._z + 1)
 
-        both_z3 = []
-        for grid, sigma, sigma_p1 in zip(grids, sigmas, sigmas_p1):
+        z3_staggered = []
+        for top_is_zero, sigma, sigma_p1 in zip(top_are_zero, sigmas, sigmas_p1):
 
             if self._is_uniform:
                 # Uniform zco grid
@@ -230,13 +230,13 @@ class Zco(Zgr):
                 a4 = self._ppa2 * self._ppacr2
                 z3 += ss2 * a4
 
-            if grid == "W":
+            if top_is_zero:
                 # Force first w-level to be exactly at zero
                 z3[{"z": 0}] = 0.0
 
-            both_z3 += [z3]
+            z3_staggered += [z3]
 
-        return tuple(both_z3)
+        return VerticalGridTuple(*z3_staggered)
 
     # --------------------------------------------------------------------------
     @property
@@ -249,7 +249,7 @@ class Zco(Zgr):
         if self._is_uniform:
             # Uniform: Return 0d DataArrays
             e3 = DataArray((self._pphmax / (self._jpk - 1.0)))
-            return tuple([e3, e3])
+            return VerticalGridTuple(t=e3, w=e3)
 
         both_e3 = []
         for sigma in self._sigmas:
@@ -268,7 +268,7 @@ class Zco(Zgr):
 
             both_e3 += [e3]
 
-        return tuple(both_e3)
+        return VerticalGridTuple(*both_e3)
 
     def _set_add_tanh2_and_pp2(
         self, pp2: Tuple[Optional[float], ...]
