@@ -234,7 +234,7 @@ class Zco(Zgr):
                 # Force first w-level to be exactly at zero
                 z3[{"z": 0}] = 0.0
 
-            z3_staggered += [z3]
+            z3_staggered.append(z3)
 
         return VerticalGridTuple(*z3_staggered)
 
@@ -251,7 +251,7 @@ class Zco(Zgr):
             e3 = DataArray((self._pphmax / (self._jpk - 1.0)))
             return VerticalGridTuple(t=e3, w=e3)
 
-        both_e3 = []
+        e3_staggered = []
         for sigma in self._sigmas:
             # Stretched zco grid
             a0 = self._ppa0
@@ -266,9 +266,9 @@ class Zco(Zgr):
                 tanh2 = np.tanh((kk - self._ppkth2) / self._ppacr2)
                 e3 += a2 * tanh2
 
-            both_e3 += [e3]
+            e3_staggered.append(e3)
 
-        return VerticalGridTuple(*both_e3)
+        return VerticalGridTuple(*e3_staggered)
 
     def _set_add_tanh2_and_pp2(
         self, pp2: Tuple[Optional[float], ...]
