@@ -17,12 +17,12 @@ repos:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 21.6b0
+    rev: 21.7b0
     hooks:
       - id: black
 
   - repo: https://github.com/keewis/blackdoc
-    rev: v0.3.3
+    rev: v0.3.4
     hooks:
       - id: blackdoc
 
@@ -41,9 +41,9 @@ repos:
     hooks:
       - id: mypy
         exclude: docs
-        additional_dependencies: [xarray, types-pkg_resources, numpy!=1.21.0]
+        additional_dependencies: ["xarray", "types-pkg_resources", "numpy!=1.21.0,!=1.21.1"]
 
   - repo: https://github.com/PyCQA/doc8
-    rev: 0.9.0a1
+    rev: 0.9.0
     hooks:
       - id: doc8
