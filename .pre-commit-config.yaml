@@ -41,7 +41,7 @@ repos:
     hooks:
       - id: mypy
         exclude: docs
-        additional_dependencies: [xarray, types-pkg_resources, numpy, typing-extensions]
+        additional_dependencies: [xarray, types-pkg_resources, typing-extensions]
 
   - repo: https://github.com/PyCQA/doc8
     rev: 0.9.0
