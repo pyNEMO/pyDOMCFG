@@ -195,7 +195,7 @@ class Zco(Zgr):
             kth = self._ppkth
             acr = self._ppacr
 
-        return np.log(np.cosh((kk - kth) / acr))
+        return DataArray(np.log(np.cosh((kk - kth) / acr)))
 
     # --------------------------------------------------------------------------
     @property
@@ -257,7 +257,7 @@ class Zco(Zgr):
             a0 = self._ppa0
             a1 = self._ppa1
             kk = -sigma * (self._jpk - 1.0) + 1.0
-            tanh1 = np.tanh((kk - self._ppkth) / self._ppacr)
+            tanh1 = DataArray(np.tanh((kk - self._ppkth) / self._ppacr))
             e3 = a0 + a1 * tanh1
 
             if self._add_tanh2:
