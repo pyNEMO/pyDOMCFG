@@ -12,7 +12,7 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.10.0
+    rev: 5.10.1
     hooks:
       - id: isort
 
@@ -44,6 +44,6 @@ repos:
         additional_dependencies: ["xarray", "types-pkg_resources"]
 
   - repo: https://github.com/PyCQA/doc8
-    rev: 0.9.1
+    rev: 0.10.1
     hooks:
       - id: doc8
