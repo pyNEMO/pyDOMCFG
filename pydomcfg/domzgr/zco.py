@@ -212,17 +212,17 @@ class Zco(Zgr):
             if self._is_uniform:
                 # Uniform zco grid
                 su = -sigma
-                s1 = DataArray((0.0))
+                ss = DataArray((0.0))
                 a1 = a3 = 0.0
                 a2 = self._pphmax
             else:
                 # Stretched zco grid
                 su = -sigma_p1
-                s1 = self._stretch_zco(-sigma)
+                ss = self._stretch_zco(-sigma)
                 a1 = self._ppsur
                 a2 = self._ppa0 * (self._jpk - 1.0)
                 a3 = self._ppa1 * self._ppacr
-            z3 = self._compute_z3(su, s1, a1, a2, a3)
+            z3 = self._compute_z3(su, ss, a1, a2, a3)
 
             if self._add_tanh2:
                 # Add double tanh term
