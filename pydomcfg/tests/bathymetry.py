@@ -77,7 +77,7 @@ class Bathymetry:
             * np.exp(
                 -(
                     stiff
-                    / 40.0e3 ** 2
+                    / 40.0e3**2
                     * ((ds.glamt - glamt_mid) ** 2 + (ds.gphit - gphit_mid) ** 2)
                 )
             )
