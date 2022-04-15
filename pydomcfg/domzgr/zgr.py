@@ -8,6 +8,8 @@ from typing import Tuple, Union
 import xarray as xr
 from xarray import DataArray, Dataset
 
+from ..utils import VerticalGridTuple
+
 
 class Zgr:
     """
@@ -59,10 +61,9 @@ class Zgr:
             sigma-coordinate (-1 <= sigma <= 0) for T and W grids
         """
 
-        k_t = kindx + 0.5
-        k_w = kindx
+        k_staggered = VerticalGridTuple(t=kindx + 0.5, w=kindx)
 
-        return tuple(-k / (self._jpk - 1.0) for k in (k_t, k_w))
+        return VerticalGridTuple(*(-k / (self._jpk - 1.0) for k in k_staggered))
 
     # -------------------------------------------------------------------------
     @staticmethod
@@ -109,13 +110,15 @@ class Zgr:
         (central-difference) of levels' depth (z3{t,w}).
         """
 
-        both_e3 = []
-        for z3, k_to_fill in zip((z3t, z3w), (-1, 0)):
+        z3_staggered = VerticalGridTuple(t=z3t, w=z3w)
+        k_to_fill_staggered = VerticalGridTuple(t=-1, w=0)
+        e3_staggered = []
+        for z3, k_to_fill in zip(z3_staggered, k_to_fill_staggered):
             diff = z3.diff("z")
             fill = 2.0 * (z3t[{"z": k_to_fill}] - z3w[{"z": k_to_fill}])
-            both_e3 += [xr.concat([diff, fill], "z")]
+            e3_staggered.append(xr.concat([diff, fill], "z"))
 
-        return tuple(both_e3)
+        return VerticalGridTuple(*e3_staggered)
 
     # --------------------------------------------------------------------------
     def _merge_z3_and_e3(

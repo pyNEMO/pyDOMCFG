@@ -3,7 +3,7 @@ Utilities
 """
 
 import inspect
-from collections import ChainMap
+from collections import ChainMap, namedtuple
 from functools import wraps
 from typing import Any, Callable, Mapping, Optional, Tuple, TypeVar, Union, cast
 
@@ -12,6 +12,8 @@ import xarray as xr
 from xarray import DataArray, Dataset
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+VerticalGridTuple = namedtuple("VerticalGridTuple", ["t", "w"])
 
 
 def generate_cartesian_grid(
