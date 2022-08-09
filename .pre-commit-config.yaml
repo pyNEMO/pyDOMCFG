@@ -22,12 +22,12 @@ repos:
       - id: black
 
   - repo: https://github.com/keewis/blackdoc
-    rev: v0.3.4
+    rev: v0.3.5
     hooks:
       - id: blackdoc
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
+    rev: 5.0.4
     hooks:
        - id: flake8
 
@@ -37,13 +37,13 @@ repos:
        - id: darglint
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.961
+    rev: v0.971
     hooks:
       - id: mypy
         exclude: docs
         additional_dependencies: ["xarray", "types-pkg_resources"]
 
   - repo: https://github.com/PyCQA/doc8
-    rev: 0.11.2
+    rev: v1.0.0
     hooks:
       - id: doc8
